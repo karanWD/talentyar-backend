@@ -1,0 +1,77 @@
+services:
+  mysql:
+    hostname: talentyar_mysql
+    image : mysql:8
+    container_name : talentyar_mysql
+    restart: unless-stopped
+    env_file: ./Docker/mysql/.env
+    ports:
+      - "127.0.0.1:3313:3306"
+    volumes :
+      - "./Docker/data/mysql/talentyar:/var/lib/mysql"
+      - "./Docker/data/mysql/backup:/data/backups"
+    networks:
+      - talentyar_network
+  php :
+    hostname: talentyar_php
+    build : ./Docker/php
+    container_name : talentyar_php
+    restart: unless-stopped
+    ports:
+      - "9201:9001"
+    volumes :
+      - "./:/var/www/talentyar"
+      - "./Docker/php/custom.ini:/usr/local/etc/php/conf.d/custom.ini"
+    networks:
+      - talentyar_network
+  nginx :
+    hostname : talentyar_nginx
+    build : ./Docker/nginx
+    container_name : talentyar_nginx
+    restart : always
+    ports :
+      - "8042:81"
+    volumes :
+      - "./Docker/nginx/conf.d:/etc/nginx/conf.d/"
+      - "./:/var/www/talentyar"
+    links:
+      - php
+    networks :
+      - talentyar_network
+  redis:
+    hostname: talentyar_redis
+    build: ./Docker/redis
+    container_name: talentyar_redis
+    ports:
+      - "127.0.0.1:6380:6380"
+    expose:
+      - '6380'
+    volumes:
+      - ./Docker/data/redis:/data
+    sysctls:
+      - net.core.somaxconn=511
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    networks:
+      - talentyar_network
+  node:
+      image: node:22-alpine
+      container_name: talentyar_node
+      working_dir: /var/www/talentyar
+      command: sh -c "npm ci && npm run build"
+      volumes:
+          - "./:/var/www/talentyar"
+      environment:
+          CHOKIDAR_USEPOLLING: "true"   # better file watching in containers
+          WATCHPACK_POLLING: "true"
+      ports:
+          - "5174:5174"
+      networks:
+          - talentyar_network
+networks:
+    talentyar_network:
+        driver: bridge
