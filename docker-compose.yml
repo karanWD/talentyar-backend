@@ -43,9 +43,9 @@ services:
     build: ./Docker/redis
     container_name: talentyar_redis
     ports:
-      - "127.0.0.1:6380:6380"
+      - "127.0.0.1:6381:6381"
     expose:
-      - '6380'
+      - '6381'
     volumes:
       - ./Docker/data/redis:/data
     sysctls:
