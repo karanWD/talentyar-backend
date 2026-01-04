@@ -18,16 +18,6 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('v1')->name('v1.')->group(function () {
-    // Public routes (no authentication required)
-    Route::prefix('public')->name('public.')->group(function () {
-        Route::get('/provinces', [PublicController::class, 'getProvinces'])->name('provinces');
-        Route::get('/cities', [PublicController::class, 'getCities'])->name('cities');
-        Route::get('/regions', [PublicController::class, 'getRegions'])->name('regions');
-        Route::get('/industries', [PublicController::class, 'getIndustries'])->name('industries');
-        Route::get('/job-groups', [PublicController::class, 'getJobGroups'])->name('job-groups');
-        Route::get('/ads', [PublicController::class, 'getAds'])->name('ads');
-    });
-
     // Public routes
     Route::prefix('user')->name('user.')->group(function () {
         Route::prefix('auth')->name('auth.')->group(function () {

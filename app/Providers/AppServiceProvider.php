@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
 
-       if (env('APP_URL') === 'https://api.ppnd.ir' || env('APP_URL') === 'http://admin.ppnd.ir') {
+       if (env('APP_URL') === 'https://api.talentyar.com') {
            URL::forceScheme('https');
        }
     }
