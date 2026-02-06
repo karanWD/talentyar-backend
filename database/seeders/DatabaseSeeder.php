@@ -20,13 +20,10 @@ class DatabaseSeeder extends Seeder
             // Seed all data for this tenant
             $this->call([PermissionSeeder::class]);
 //            $this->call([CategorySeeder::class]);
-            $this->call([RoleSeeder::class]);
-            $this->call([AdminSeeder::class]);
+//            $this->call([RoleSeeder::class]);
+//            $this->call([AdminSeeder::class]);
 //            $this->call([MediaSeeder::class]);
-        $this->call([ProvinceSeeder::class]);
-        $this->call([CitySeeder::class]);
-        $this->call([IndustrySeeder::class]);
-        $this->call([JobGroupSeeder::class]);
-        $this->call([AdsSeeder::class]);
+            $this->call([ProvinceSeeder::class]);
+            $this->call([CitySeeder::class]);
     }
 }
