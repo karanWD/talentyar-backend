@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\CheckUsernameRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
@@ -159,6 +160,28 @@ class AuthController extends BaseApiController
         return $this->successResponse(
             ['user' => new UserResource($user)],
             'Profile updated successfully'
+        );
+    }
+
+    /**
+     * Check if username is available (unique for other users).
+     * Throttled to prevent abuse.
+     */
+    public function checkUsername(CheckUsernameRequest $request): JsonResponse
+    {
+        $username = $request->validated('username');
+        $currentUser = $request->user();
+
+        $takenByOther = User::where('username', $username)
+            ->where('id', '!=', $currentUser->id)
+            ->exists();
+
+        return $this->successResponse(
+            [
+                'username' => $username,
+                'available' => !$takenByOther,
+            ],
+            $takenByOther ? 'Username is already taken' : 'Username is available'
         );
     }
 }
