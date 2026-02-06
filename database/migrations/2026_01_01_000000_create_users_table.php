@@ -22,7 +22,7 @@ return new class extends Migration
             $table->unsignedBigInteger('city_id')->nullable();
             $table->foreign('province_id')->references('id')->on('provinces');
             $table->foreign('city_id')->references('id')->on('cities');
-            $table->unsignedTinyInteger('gender',\App\Models\User::GENDERS)->nullable();
+            $table->unsignedTinyInteger('gender')->nullable();
             $table->string('birth_date')->nullable();
             $table->integer('weight')->default(0);
             $table->integer('height')->default(0);
