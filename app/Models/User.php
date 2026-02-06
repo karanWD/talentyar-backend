@@ -22,6 +22,22 @@ class User extends Authenticatable
         'last_name',
         'phone',
         'email',
+        'username',
+        'province_id',
+        'city_id',
+        'gender',
+        'birth_date',
+        'weight',
+        'height',
+        'foot_specialization',
+        'post_skill',
+        'skill_level',
+        'activity_history',
+        'team_name',
+        'favorite_iranian_team',
+        'favorite_foreign_team',
+        'shirt_number',
+        'bio',
     ];
 
     const GENDER_MALE = 0;

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\OtpService;
@@ -150,15 +151,10 @@ class AuthController extends BaseApiController
     /**
      * Update user profile
      */
-    public function updateProfile(Request $request): JsonResponse
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'full_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255'],
-        ]);
-
         $user = $request->user();
-        $user->update($validated);
+        $user->update($request->validated());
 
         return $this->successResponse(
             ['user' => new UserResource($user)],
