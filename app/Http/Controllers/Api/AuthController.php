@@ -87,7 +87,6 @@ class AuthController extends BaseApiController
         );
 
 
-        $profileCompleted = $user->full_name;
         // Revoke all existing tokens (optional - for single device login)
         // $user->tokens()->delete();
 
@@ -104,7 +103,7 @@ class AuthController extends BaseApiController
             [
                 'token' => $token,
                 'user' => new UserResource($user),
-                'first_user' => !$firstUserExists || !$profileCompleted,
+                'first_user' => !$firstUserExists,
             ],
             'Login successful'
         );
