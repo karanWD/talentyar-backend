@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\PublicController;
 use App\Http\Controllers\Employer\AuthController as EmployerAuthController;
 use App\Http\Controllers\Employer\CompanyController;
@@ -39,6 +40,11 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/username/check', [AuthController::class, 'checkUsername'])
                 ->middleware('throttle:20,1')
                 ->name('username.check');
+
+            Route::get('/followers', [FollowController::class, 'followers'])->name('followers');
+            Route::get('/following', [FollowController::class, 'following'])->name('following');
+            Route::post('/follow/{user}', [FollowController::class, 'follow'])->name('follow');
+            Route::delete('/follow/{user}', [FollowController::class, 'unfollow'])->name('unfollow');
         });
     });
 
