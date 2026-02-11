@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Resources\UserFollowResource;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class FollowController extends BaseApiController
 {
@@ -14,14 +16,14 @@ class FollowController extends BaseApiController
      */
     public function followers(Request $request): JsonResponse
     {
-        $users = $request->user()
+        $users = Auth::user()
             ->followers()
             ->latest('user_follows.created_at')
             ->paginate($request->integer('per_page', 15))
             ->withQueryString();
 
         return $this->successResponse(
-            ['followers' => UserResource::collection($users)],
+            ['followers' => UserFollowResource::collection($users)],
             'Followers retrieved successfully'
         );
     }
@@ -31,14 +33,14 @@ class FollowController extends BaseApiController
      */
     public function following(Request $request): JsonResponse
     {
-        $users = $request->user()
+        $users = Auth::user()
             ->following()
             ->latest('user_follows.created_at')
             ->paginate($request->integer('per_page', 15))
             ->withQueryString();
 
         return $this->successResponse(
-            ['following' => UserResource::collection($users)],
+            ['following' => UserFollowResource::collection($users)],
             'Following retrieved successfully'
         );
     }
@@ -48,7 +50,7 @@ class FollowController extends BaseApiController
      */
     public function follow(Request $request, User $user): JsonResponse
     {
-        $currentUser = $request->user();
+        $currentUser = Auth::user();
 
         if ($currentUser->id === $user->id) {
             return $this->errorResponse('You cannot follow yourself.', 422);
@@ -56,7 +58,7 @@ class FollowController extends BaseApiController
 
         if ($currentUser->following()->where('following_id', $user->id)->exists()) {
             return $this->successResponse(
-                ['user' => new UserResource($user)],
+                ['user' => new UserFollowResource($user)],
                 'Already following this user'
             );
         }
@@ -64,7 +66,7 @@ class FollowController extends BaseApiController
         $currentUser->following()->attach($user->id);
 
         return $this->successResponse(
-            ['user' => new UserResource($user)],
+            ['user' => new UserFollowResource($user)],
             'Successfully followed user',
             201
         );
@@ -75,12 +77,12 @@ class FollowController extends BaseApiController
      */
     public function unfollow(Request $request, User $user): JsonResponse
     {
-        $currentUser = $request->user();
+        $currentUser = Auth::user();
 
         $currentUser->following()->detach($user->id);
 
         return $this->successResponse(
-            ['user' => new UserResource($user)],
+            ['user' => new UserFollowResource($user)],
             'Successfully unfollowed user'
         );
     }
