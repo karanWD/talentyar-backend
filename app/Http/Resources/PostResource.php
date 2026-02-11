@@ -17,6 +17,7 @@ class PostResource extends BaseResource
         return [
             'id' => $this->id,
             'user_id' => $this->user_id,
+            'user' => $this->whenLoaded('user', fn () => new UserFollowResource($this->user)),
             'state' => $this->state,
             'caption' => $this->caption,
             'video' => $this->whenLoaded('media', fn () => $this->media->first() ? new MediaResource($this->media->first()) : null),

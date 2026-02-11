@@ -49,6 +49,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::delete('/follow/{user}', [FollowController::class, 'unfollow'])->name('unfollow');
 
             Route::post('/media', [MediaController::class, 'upload'])->name('media.upload');
+            Route::get('/posts', [PostController::class, 'myPosts'])->name('posts.index');
+            Route::get('/feed', [PostController::class, 'feed'])->name('feed');
             Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
         });
     });
