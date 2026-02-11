@@ -84,6 +84,11 @@ class MediaService
             'image/webp' => 'webp',
             'image/svg+xml' => 'svg',
             'application/pdf' => 'pdf',
+            'video/mp4' => 'mp4',
+            'video/quicktime' => 'mov',
+            'video/x-msvideo' => 'avi',
+            'video/webm' => 'webm',
+            'video/mpeg' => 'mpeg',
             default => str_contains($mime ?? '', '/')
                 ? explode('/', $mime, 2)[1]
                 : null,
