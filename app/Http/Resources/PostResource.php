@@ -20,7 +20,17 @@ class PostResource extends BaseResource
             'user' => $this->whenLoaded('user', fn () => new UserFollowResource($this->user)),
             'state' => $this->state,
             'caption' => $this->caption,
-            'video' => $this->whenLoaded('media', fn () => $this->media->first() ? new MediaResource($this->media->first()) : null),
+            'video' => $this->whenLoaded('media', fn () => $this->media->first() ? new MinimalMediaResource($this->media->first()) : null),
+            'likes_count' => (int) ($this->likes_count ?? 0),
+            'dislikes_count' => (int) ($this->dislikes_count ?? 0),
+            'user_has_liked' => $this->when(
+                $this->relationLoaded('postLikes'),
+                fn () => $this->postLikes->contains('type', \App\Models\PostLike::TYPE_LIKE)
+            ),
+            'user_has_disliked' => $this->when(
+                $this->relationLoaded('postLikes'),
+                fn () => $this->postLikes->contains('type', \App\Models\PostLike::TYPE_DISLIKE)
+            ),
             ...$this->includeTimestamps(),
         ];
     }

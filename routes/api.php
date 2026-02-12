@@ -52,6 +52,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('/posts', [PostController::class, 'myPosts'])->name('posts.index');
             Route::get('/feed', [PostController::class, 'feed'])->name('feed');
             Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
+            Route::post('/posts/{post}/like', [PostController::class, 'like'])->name('posts.like');
+            Route::post('/posts/{post}/dislike', [PostController::class, 'dislike'])->name('posts.dislike');
+            Route::delete('/posts/{post}/reaction', [PostController::class, 'removeReaction'])->name('posts.reaction.remove');
         });
     });
 
