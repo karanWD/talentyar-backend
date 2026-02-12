@@ -45,4 +45,9 @@ class Post extends Model
     {
         return $this->hasMany(PostLike::class)->where('type', PostLike::TYPE_DISLIKE);
     }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
 }

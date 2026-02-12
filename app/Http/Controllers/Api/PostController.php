@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\StoreCommentRequest;
 use App\Http\Requests\StorePostRequest;
+use App\Http\Resources\CommentResource;
 use App\Http\Resources\PostResource;
+use App\Models\Comment;
 use App\Models\Media;
 use App\Models\Post;
 use App\Models\PostLike;
@@ -131,6 +134,42 @@ class PostController extends BaseApiController
         return $this->successResponse(
             ['post' => new PostResource($post)],
             'Reaction removed'
+        );
+    }
+
+    /**
+     * List comments for a post (paginated).
+     */
+    public function comments(Request $request, Post $post): JsonResponse
+    {
+        $comments = $post->comments()
+            ->with('user')
+            ->latest()
+            ->paginate($request->integer('per_page', 15))
+            ->withQueryString();
+
+        return $this->successResponse(
+            ['comments' => CommentResource::collection($comments)],
+            'Comments retrieved successfully'
+        );
+    }
+
+    /**
+     * Add a comment to a post.
+     */
+    public function storeComment(StoreCommentRequest $request, Post $post): JsonResponse
+    {
+        $comment = $post->comments()->create([
+            'user_id' => $request->user()->id,
+            'body' => $request->validated('body'),
+        ]);
+
+        $comment->load('user');
+
+        return $this->successResponse(
+            ['comment' => new CommentResource($comment)],
+            'Comment added',
+            201
         );
     }
 }

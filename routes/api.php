@@ -55,6 +55,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/posts/{post}/like', [PostController::class, 'like'])->name('posts.like');
             Route::post('/posts/{post}/dislike', [PostController::class, 'dislike'])->name('posts.dislike');
             Route::delete('/posts/{post}/reaction', [PostController::class, 'removeReaction'])->name('posts.reaction.remove');
+            Route::get('/posts/{post}/comments', [PostController::class, 'comments'])->name('posts.comments.index');
+            Route::post('/posts/{post}/comments', [PostController::class, 'storeComment'])->name('posts.comments.store');
         });
     });
 
