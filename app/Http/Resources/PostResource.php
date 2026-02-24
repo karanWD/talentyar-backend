@@ -32,6 +32,7 @@ class PostResource extends BaseResource
                 $this->relationLoaded('postLikes'),
                 fn () => $this->postLikes->contains('type', \App\Models\PostLike::TYPE_DISLIKE)
             ),
+            'comment_count' => $this->comments()->count(),
             ...$this->includeTimestamps(),
         ];
     }
