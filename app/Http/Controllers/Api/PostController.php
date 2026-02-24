@@ -10,6 +10,7 @@ use App\Models\Comment;
 use App\Models\Media;
 use App\Models\Post;
 use App\Models\PostLike;
+use App\Models\PostView;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,7 +24,7 @@ class PostController extends BaseApiController
     {
         $user = $request->user();
         $posts = $user->posts()
-            ->withCount(['likes', 'dislikes'])
+            ->withCount(['likes', 'dislikes', 'postViews'])
             ->with(['media', 'user', 'postLikes' => fn ($q) => $q->where('user_id', $user->id)])
             ->latest()
             ->paginate($request->integer('per_page', 15))
@@ -45,7 +46,7 @@ class PostController extends BaseApiController
         $posts = Post::query()
             ->where('state', Post::STATE_PUBLISHED)
             ->whereIn('user_id', $followingIds)
-            ->withCount(['likes', 'dislikes'])
+            ->withCount(['likes', 'dislikes', 'postViews'])
             ->with(['media', 'user', 'postLikes' => fn ($q) => $q->where('user_id', Auth::user()->id)])
             ->latest()
             ->paginate($request->integer('per_page', 15))
@@ -74,7 +75,7 @@ class PostController extends BaseApiController
         $post->assignMedia($media);
 
         $post->load('media');
-        $post->loadCount(['likes', 'dislikes']);
+        $post->loadCount(['likes', 'dislikes', 'postViews']);
 
         return $this->successResponse(
             ['post' => new PostResource($post)],
@@ -93,7 +94,7 @@ class PostController extends BaseApiController
             ['type' => PostLike::TYPE_LIKE]
         );
 
-        $post->loadCount(['likes', 'dislikes']);
+        $post->loadCount(['likes', 'dislikes', 'postViews']);
         $post->load(['postLikes' => fn ($q) => $q->where('user_id', $request->user()->id)]);
 
         return $this->successResponse(
@@ -112,7 +113,7 @@ class PostController extends BaseApiController
             ['type' => PostLike::TYPE_DISLIKE]
         );
 
-        $post->loadCount(['likes', 'dislikes']);
+        $post->loadCount(['likes', 'dislikes', 'postViews']);
         $post->load(['postLikes' => fn ($q) => $q->where('user_id', $request->user()->id)]);
 
         return $this->successResponse(
@@ -128,7 +129,7 @@ class PostController extends BaseApiController
     {
         $post->postLikes()->where('user_id', $request->user()->id)->delete();
 
-        $post->loadCount(['likes', 'dislikes']);
+        $post->loadCount(['likes', 'dislikes', 'postViews']);
         $post->setRelation('postLikes', collect());
 
         return $this->successResponse(
@@ -151,6 +152,24 @@ class PostController extends BaseApiController
         return $this->successResponse(
             ['comments' => CommentResource::collection($comments)],
             'Comments retrieved successfully'
+        );
+    }
+
+    /**
+     * Record a view for a post (logged-in user). Each call counts as one view.
+     */
+    public function recordView(Request $request, Post $post): JsonResponse
+    {
+        $post->postViews()->create([
+            'user_id' => $request->user()->id,
+        ]);
+
+        $post->loadCount(['likes', 'dislikes', 'postViews']);
+        $post->load(['media', 'user', 'postLikes' => fn ($q) => $q->where('user_id', $request->user()->id)]);
+
+        return $this->successResponse(
+            ['post' => new PostResource($post)],
+            'View recorded'
         );
     }
 

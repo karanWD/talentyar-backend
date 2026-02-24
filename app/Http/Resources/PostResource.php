@@ -23,6 +23,7 @@ class PostResource extends BaseResource
             'video' => $this->whenLoaded('media', fn () => $this->media->first() ? new MinimalMediaResource($this->media->first()) : null),
             'likes_count' => (int) ($this->likes_count ?? 0),
             'dislikes_count' => (int) ($this->dislikes_count ?? 0),
+            'views_count' => (int) ($this->post_views_count ?? 0),
             'user_has_liked' => $this->when(
                 $this->relationLoaded('postLikes'),
                 fn () => $this->postLikes->contains('type', \App\Models\PostLike::TYPE_LIKE)

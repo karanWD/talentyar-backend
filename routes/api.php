@@ -57,6 +57,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::delete('/posts/{post}/reaction', [PostController::class, 'removeReaction'])->name('posts.reaction.remove');
             Route::get('/posts/{post}/comments', [PostController::class, 'comments'])->name('posts.comments.index');
             Route::post('/posts/{post}/comments', [PostController::class, 'storeComment'])->name('posts.comments.store');
+            Route::post('/posts/{post}/view', [PostController::class, 'recordView'])->name('posts.view');
         });
     });
 
