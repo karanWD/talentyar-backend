@@ -39,6 +39,7 @@ class UserResource extends BaseResource
             'bio' => $this->bio,
             'followers_count' => $this->followers()->count(),
             'following_count' => $this->following()->count(),
+            'post_count' => $this->posts()->count(),
             // Merge in the timestamps, if any
             ...$this->includeTimestamps(),
         ];
