@@ -42,6 +42,26 @@ class StorePostRequest extends FormRequest
                     }
                 },
             ],
+            'thumbnail_hash' => [
+                'nullable',
+                'string',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if ($value === null || $value === '') {
+                        return;
+                    }
+                    $media = Media::where('hash', $value)->first();
+                    if (!$media) {
+                        $fail('The selected thumbnail was not found. Upload the image first via /api/v1/user/media.');
+                        return;
+                    }
+                    if (!str_starts_with($media->mime_type ?? '', 'image/')) {
+                        $fail('The selected media is not an image.');
+                    }
+                    if ($media->entity_id !== null) {
+                        $fail('This media is already attached to another entity.');
+                    }
+                },
+            ],
             'state' => ['nullable', 'integer', 'in:' . implode(',', Post::STATES)],
         ];
     }

@@ -24,12 +24,16 @@ trait MediaTrait
         return $this->media()->get();
     }
 
-    public function assignMedia(Media $media): Media
+    public function assignMedia(Media $media, ?string $collection = null): Media
     {
-        $media->update([
+        $data = [
             'entity_type' => $this->getMorphClass(),
             'entity_id' => $this->getKey(),
-        ]);
+        ];
+        if ($collection !== null) {
+            $data['collection'] = $collection;
+        }
+        $media->update($data);
 
         return $media;
     }

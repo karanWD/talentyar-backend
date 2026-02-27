@@ -71,8 +71,15 @@ class PostController extends BaseApiController
             'state' => $request->validated('state', Post::STATE_PUBLISHED),
         ]);
 
-        $media = Media::where('hash', $request->validated('video_hash'))->first();
-        $post->assignMedia($media);
+        $videoMedia = Media::where('hash', $request->validated('video_hash'))->first();
+        $post->assignMedia($videoMedia, 'video');
+
+        if ($request->filled('thumbnail_hash')) {
+            $thumbnailMedia = Media::where('hash', $request->validated('thumbnail_hash'))->first();
+            if ($thumbnailMedia) {
+                $post->assignMedia($thumbnailMedia, 'thumbnail');
+            }
+        }
 
         $post->load('media');
         $post->loadCount(['likes', 'dislikes', 'postViews']);
