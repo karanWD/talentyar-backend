@@ -37,9 +37,9 @@ class UserResource extends BaseResource
             'favorite_foreign_team' => $this->favorite_foreign_team,
             'shirt_number' => $this->shirt_number,
             'bio' => $this->bio,
-            'followers_count' => $this->followers()->count(),
-            'following_count' => $this->following()->count(),
-            'post_count' => $this->posts()->count(),
+            'followers_count' => (int) ($this->followers_count ?? $this->followers()->count()),
+            'following_count' => (int) ($this->following_count ?? $this->following()->count()),
+            'post_count' => (int) ($this->posts_count ?? $this->posts()->count()),
             // Merge in the timestamps, if any
             ...$this->includeTimestamps(),
         ];
