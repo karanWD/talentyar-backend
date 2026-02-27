@@ -37,6 +37,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::prefix('auth')->name('auth.')->group(function () {
                 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
                 Route::post('/logout-all', [AuthController::class, 'logoutAll'])->name('logout.all');
+                Route::post('/refresh', [AuthController::class, 'refresh'])->name('refresh');
             });
             Route::get('/profile', [AuthController::class, 'getProfile'])->name('get.profile');
             Route::post('/profile', [AuthController::class, 'updateProfile'])->name('update.profile');

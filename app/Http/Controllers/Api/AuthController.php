@@ -110,6 +110,29 @@ class AuthController extends BaseApiController
     }
 
     /**
+     * Refresh the current token: revoke it and issue a new one.
+     */
+    public function refresh(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $user->currentAccessToken()->delete();
+
+        $token = $user->createToken(
+            name: 'api-token-user',
+            abilities: ['*'],
+            expiresAt: now()->addDays(30)
+        )->plainTextToken;
+
+        return $this->successResponse(
+            [
+                'token' => $token,
+                'user' => new UserResource($user),
+            ],
+            'Token refreshed successfully'
+        );
+    }
+
+    /**
      * Get authenticated user
      */
     public function getProfile(Request $request): JsonResponse
