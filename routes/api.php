@@ -63,6 +63,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('/posts/{post}/comments', [PostController::class, 'comments'])->name('posts.comments.index');
             Route::post('/posts/{post}/comments', [PostController::class, 'storeComment'])->name('posts.comments.store');
             Route::post('/posts/{post}/view', [PostController::class, 'recordView'])->name('posts.view');
+
+            Route::get('/users/search', [UserController::class, 'search'])->name('users.search');
+            Route::get('/users/{username}', [UserController::class, 'showByUsername'])->name('users.show');
         });
     });
 
@@ -70,8 +73,5 @@ Route::prefix('v1')->name('v1.')->group(function () {
     Route::prefix('public')->name('public.')->group(function () {
         Route::get('/provinces', [PublicController::class, 'getProvinces'])->name('provinces');
         Route::get('/cities', [PublicController::class, 'getCities'])->name('cities');
-
-        Route::get('/users/search', [UserController::class, 'search'])->name('users.search');
-        Route::get('/users/{username}', [UserController::class, 'showByUsername'])->name('users.show');
     });
 });

@@ -37,6 +37,7 @@ class UserController extends BaseApiController
             'username' => $user->username,
             'followers_count' => (int) $user->followers_count,
             'following_count' => (int) $user->following_count,
+            'is_following' => auth()->check() ? $user->followers()->where('follower_id', auth()->id())->exists() : false,
             'posts_count' => (int) $user->posts_count,
         ]);
 
@@ -79,6 +80,7 @@ class UserController extends BaseApiController
             'posts' => PostResource::collection($posts),
             'followers_count' => (int) $user->followers_count,
             'following_count' => (int) $user->following_count,
+            'is_following' => auth()->check() ? $user->followers()->where('follower_id', auth()->id())->exists() : false,
             'posts_count' => (int) $user->posts_count,
         ], 'Profile retrieved successfully');
     }
