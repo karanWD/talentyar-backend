@@ -41,6 +41,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
             });
             Route::get('/profile', [AuthController::class, 'getProfile'])->name('get.profile');
             Route::post('/profile', [AuthController::class, 'updateProfile'])->name('update.profile');
+            Route::post('/profile/avatar', [AuthController::class, 'updateProfileAvatar'])->name('update.profile.avatar');
+
+
             Route::post('/username/check', [AuthController::class, 'checkUsername'])
                 ->middleware('throttle:20,1')
                 ->name('username.check');

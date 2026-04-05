@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\CheckUsernameRequest;
+use App\Http\Requests\UpdateProfileAvatarRequest;
 use App\Http\Requests\UpdateProfileRequest;
+use App\Http\Resources\PostResource;
 use App\Http\Resources\UserResource;
+use App\Models\Media;
 use App\Models\User;
 use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
@@ -144,7 +147,7 @@ class AuthController extends BaseApiController
     public function getProfile(Request $request): JsonResponse
     {
         return $this->successResponse(
-            ['user' => new UserResource($request->user())],
+            ['user' => new UserResource($request->user()->load('media'))],
             'User retrieved successfully'
         );
     }
@@ -185,9 +188,26 @@ class AuthController extends BaseApiController
         $user = $request->user();
         $user->update($request->validated());
 
+        $user->load('media');
+
         return $this->successResponse(
             ['user' => new UserResource($user)],
             'Profile updated successfully'
+        );
+    }
+
+    public function updateProfileAvatar(UpdateProfileAvatarRequest $request)
+    {
+        $user = $request->user();
+        $user->unAssignMedia('avatar');
+        $videoMedia = Media::where('hash', $request->validated('profile_hash'))->first();
+        $user->assignMedia($videoMedia, 'avatar');
+        $user->load('media');
+
+        return $this->successResponse(
+            ['user' => new UserResource($user)],
+            'Profile updated successfully',
+            201
         );
     }
 

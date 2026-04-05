@@ -38,4 +38,21 @@ trait MediaTrait
         return $media;
     }
 
+    public function unAssignMedia(?string $collection = null)
+    {
+        $query = Media::query()
+            ->where('entity_type', $this->getMorphClass())
+            ->where('entity_id', $this->getKey());
+
+        if ($collection !== null) {
+            $query->where('collection', $collection);
+        }
+
+        $query->update([
+            'entity_type' => null,
+            'entity_id' => null,
+        ]);
+
+    }
+
 }

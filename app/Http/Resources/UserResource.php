@@ -40,6 +40,12 @@ class UserResource extends BaseResource
             'followers_count' => (int) ($this->followers_count ?? $this->followers()->count()),
             'following_count' => (int) ($this->following_count ?? $this->following()->count()),
             'post_count' => (int) ($this->posts_count ?? $this->posts()->count()),
+            'avatar' => $this->whenLoaded('media', function () {
+                $file = $this->media->where('collection', 'avatar')->first();
+                $fallback = $this->media->first();
+                $media = $file ?? $fallback;
+                return $media ? new MinimalMediaResource($media) : null;
+            }),
             // Merge in the timestamps, if any
             ...$this->includeTimestamps(),
         ];
