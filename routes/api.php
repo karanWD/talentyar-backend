@@ -50,6 +50,10 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
             Route::get('/followers', [FollowController::class, 'followers'])->name('followers');
             Route::get('/following', [FollowController::class, 'following'])->name('following');
+
+            Route::get('/following/{username}', [FollowController::class, 'followingUsername'])->name('following.username');
+            Route::get('/followers/{username}', [FollowController::class, 'followersUsername'])->name('followers.username');
+
             Route::post('/follow/{user}', [FollowController::class, 'follow'])->name('follow');
             Route::delete('/follow/{user}', [FollowController::class, 'unfollow'])->name('unfollow');
 

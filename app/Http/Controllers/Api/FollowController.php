@@ -45,6 +45,65 @@ class FollowController extends BaseApiController
         );
     }
 
+    public function followingUsername(Request $request,string $username): JsonResponse
+    {
+        $user = User::query()
+            ->where('username', $username)
+            ->first();
+
+        if (!$user) {
+            return $this->errorResponse('User not found', 404);
+        }
+
+        if (!Auth::user()->following()->where('following_id', $user->id)->exists()) {
+            return $this->successResponse(
+                [],
+                'You are not following this user'
+            );
+        }
+
+        $following = $user
+            ->following()
+            ->latest('user_follows.created_at')
+            ->paginate($request->integer('per_page', 15))
+            ->withQueryString();
+
+        return $this->successResponse(
+            ['following' => UserFollowResource::collection($following)],
+            'Following retrieved successfully'
+        );
+    }
+
+
+    public function followersUsername(Request $request,string $username): JsonResponse
+    {
+        $user = User::query()
+            ->where('username', $username)
+            ->first();
+
+        if (!$user) {
+            return $this->errorResponse('User not found', 404);
+        }
+
+        if (!Auth::user()->following()->where('following_id', $user->id)->exists()) {
+            return $this->successResponse(
+                [],
+                'You are not following this user'
+            );
+        }
+
+        $followers = $user
+            ->followers()
+            ->latest('user_follows.created_at')
+            ->paginate($request->integer('per_page', 15))
+            ->withQueryString();
+
+        return $this->successResponse(
+            ['followers' => UserFollowResource::collection($followers)],
+            'Followers retrieved successfully'
+        );
+    }
+
     /**
      * Follow a user.
      */
