@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Resources\MinimalMediaResource;
 use App\Http\Resources\PostResource;
 use App\Http\Resources\UserResource;
 use App\Models\Post;
@@ -22,6 +23,7 @@ class UserController extends BaseApiController
         }
 
         $users = User::query()
+            ->with('media')
             ->where('username', 'like', '%' . $username . '%')
             ->withCount(['followers', 'following', 'posts'])
             ->orderByRaw("CASE WHEN username = ? THEN 0 ELSE 1 END", [$username])
@@ -39,6 +41,13 @@ class UserController extends BaseApiController
             'following_count' => (int) $user->following_count,
             'is_following' => auth()->check() ? $user->followers()->where('follower_id', auth()->id())->exists() : false,
             'posts_count' => (int) $user->posts_count,
+            'avatar' => (function () use ($user) {
+                $file = $user->media()->where('collection', 'avatar')->first();
+                $fallback = $user->media()->first();
+                $media = $file ?? $fallback;
+
+                return $media ? new MinimalMediaResource($media) : null;
+            })(),
         ]);
 
         return $this->successResponse(
@@ -53,6 +62,7 @@ class UserController extends BaseApiController
     public function showByUsername(Request $request, string $username): JsonResponse
     {
         $user = User::query()
+            ->with('media')
             ->where('username', $username)
             ->withCount(['followers', 'following', 'posts'])
             ->first();

@@ -16,6 +16,7 @@ class UserResource extends BaseResource
     {
         return [
             'id' => $this->id,
+            'is_me' => true,
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
             'full_name' => trim("{$this->first_name} {$this->last_name}") ?: null,
