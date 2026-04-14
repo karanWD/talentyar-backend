@@ -41,7 +41,7 @@ class PostController extends BaseApiController
      */
     public function feed(Request $request): JsonResponse
     {
-        $followingIds = Auth::user()->following()->pluck('user_follows.id');
+        $followingIds = Auth::user()->following()->pluck('user_follows.following_id');
 
         $posts = Post::query()
             ->where('state', Post::STATE_PUBLISHED)
@@ -51,6 +51,15 @@ class PostController extends BaseApiController
             ->latest()
             ->paginate($request->integer('per_page', 15))
             ->withQueryString();
+
+        if($posts->count() == 0){
+            $posts = Post::query()
+                ->where('state', Post::STATE_PUBLISHED)
+                ->with(['media', 'user', 'postLikes' => fn ($q) => $q->where('user_id', Auth::user()->id)])
+                ->inRandomOrder()
+                ->paginate($request->integer('per_page', 15))
+                ->withQueryString();
+        }
 
         return $this->successResponse(
             ['posts' => PostResource::collection($posts)],
