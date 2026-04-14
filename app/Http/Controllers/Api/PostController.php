@@ -11,6 +11,7 @@ use App\Models\Media;
 use App\Models\Post;
 use App\Models\PostLike;
 use App\Models\PostView;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,6 +24,21 @@ class PostController extends BaseApiController
     public function myPosts(Request $request): JsonResponse
     {
         $user = $request->user();
+        $posts = $user->posts()
+            ->withCount(['likes', 'dislikes', 'postViews'])
+            ->with(['media', 'user', 'postLikes' => fn ($q) => $q->where('user_id', $user->id)])
+            ->latest()
+            ->paginate($request->integer('per_page', 15))
+            ->withQueryString();
+
+        return $this->successResponse(
+            ['posts' => PostResource::collection($posts)],
+            'Posts retrieved successfully'
+        );
+    }
+
+    public function userPosts(Request $request,User $user): JsonResponse
+    {
         $posts = $user->posts()
             ->withCount(['likes', 'dislikes', 'postViews'])
             ->with(['media', 'user', 'postLikes' => fn ($q) => $q->where('user_id', $user->id)])
