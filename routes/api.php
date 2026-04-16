@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AdminAuthController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\PostController;
@@ -22,6 +23,12 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('v1')->name('v1.')->group(function () {
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::prefix('auth')->name('auth.')->group(function () {
+            Route::post('/login', [AdminAuthController::class, 'login'])->name('login');
+        });
+    });
+
     // Public routes
     Route::prefix('user')->name('user.')->group(function () {
         Route::prefix('auth')->name('auth.')->group(function () {
@@ -32,6 +39,15 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
 
     // Protected routes (require authentication)
+    Route::middleware('auth:api-admin')->group(function () {
+        Route::prefix('admin')->name('admin.')->group(function () {
+            Route::prefix('auth')->name('auth.')->group(function () {
+                Route::get('/profile', [AdminAuthController::class, 'profile'])->name('profile');
+                Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
+            });
+        });
+    });
+
     Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('user')->name('user.')->group(function () {
             Route::prefix('auth')->name('auth.')->group(function () {
