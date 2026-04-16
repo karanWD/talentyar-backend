@@ -61,6 +61,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('/posts', [PostController::class, 'myPosts'])->name('posts.index');
             Route::get('/{user}/posts', [PostController::class, 'userPosts'])->name('userPosts.index');
             Route::get('/feed', [PostController::class, 'feed'])->name('feed');
+            Route::get('/explore', [PostController::class, 'explore'])->name('feed');
 
             Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
 

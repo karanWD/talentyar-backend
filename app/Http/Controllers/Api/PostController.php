@@ -81,7 +81,30 @@ class PostController extends BaseApiController
             ['posts' => PostResource::collection($posts)],
             'Feed retrieved successfully'
         );
+    }  
+    
+    public function explore(Request $request): JsonResponse
+    {
+        // Show posts that have more views, in random order
+
+        $posts = Post::query()
+            ->where('state', Post::STATE_PUBLISHED)
+            ->withCount(['likes', 'dislikes', 'postViews'])
+            ->with(['media', 'user', 'postLikes' => fn ($q) => $q->where('user_id', Auth::user()->id)])
+            ->orderByDesc('post_views_count')
+            ->inRandomOrder()
+            ->paginate($request->integer('per_page', 15))
+            ->withQueryString();
+
+        
+
+        return $this->successResponse(
+            ['posts' => PostResource::collection($posts)],
+            'Feed retrieved successfully'
+        );
     }
+
+    
 
     /**
      * Create a post with one video (attach media by hash).
