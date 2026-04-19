@@ -37,8 +37,18 @@ class PostController extends BaseApiController
         );
     }
 
-    public function userPosts(Request $request,User $user): JsonResponse
+    public function userPosts(Request $request,$username): JsonResponse
     {
+        $user = User::query()
+            ->with('media')
+            ->where('username', $username)
+            ->withCount(['followers', 'following', 'posts'])
+            ->first();
+
+        if (!$user) {
+            return $this->errorResponse('User not found', 404);
+        }
+
         $posts = $user->posts()
             ->withCount(['likes', 'dislikes', 'postViews'])
             ->with(['media', 'user', 'postLikes' => fn ($q) => $q->where('user_id', $user->id)])
@@ -81,8 +91,8 @@ class PostController extends BaseApiController
             ['posts' => PostResource::collection($posts)],
             'Feed retrieved successfully'
         );
-    }  
-    
+    }
+
     public function explore(Request $request): JsonResponse
     {
         // Show posts that have more views, in random order
@@ -96,7 +106,7 @@ class PostController extends BaseApiController
             ->paginate($request->integer('per_page', 15))
             ->withQueryString();
 
-        
+
 
         return $this->successResponse(
             ['posts' => PostResource::collection($posts)],
@@ -104,7 +114,7 @@ class PostController extends BaseApiController
         );
     }
 
-    
+
 
     /**
      * Create a post with one video (attach media by hash).

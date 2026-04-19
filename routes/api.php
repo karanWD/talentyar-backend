@@ -75,7 +75,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
             Route::post('/media', [MediaController::class, 'upload'])->name('media.upload');
             Route::get('/posts', [PostController::class, 'myPosts'])->name('posts.index');
-            Route::get('/{user}/posts', [PostController::class, 'userPosts'])->name('userPosts.index');
+            Route::get('/{username}/posts', [PostController::class, 'userPosts'])->name('userPosts.index');
             Route::get('/feed', [PostController::class, 'feed'])->name('feed');
             Route::get('/explore', [PostController::class, 'explore'])->name('feed');
 
