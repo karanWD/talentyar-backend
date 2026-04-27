@@ -15,12 +15,12 @@ class AdminAuthController extends BaseApiController
     public function login(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'phone' => ['required', 'regex:/^09[0-9]{9}$/'],
+            'username' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
         ]);
 
         $admin = Admin::query()
-            ->where('phone', $validated['phone'])
+            ->where('username', $validated['username'])
             ->where('status', 'active')
             ->first();
 
@@ -40,8 +40,10 @@ class AdminAuthController extends BaseApiController
                 'admin' => [
                     'id' => $admin->id,
                     'name' => $admin->name,
+                    'username' => $admin->username,
                     'phone' => $admin->phone,
                     'status' => $admin->status,
+                    'roles' => $admin->getRoleNames()->values(),
                 ],
             ],
             'Login successful'
@@ -60,8 +62,10 @@ class AdminAuthController extends BaseApiController
                 'admin' => [
                     'id' => $admin->id,
                     'name' => $admin->name,
+                    'username' => $admin->username,
                     'phone' => $admin->phone,
                     'status' => $admin->status,
+                    'roles' => $admin->getRoleNames()->values(),
                 ],
             ],
             'Profile retrieved successfully'

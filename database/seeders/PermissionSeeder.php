@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Permission;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
 
 class PermissionSeeder extends Seeder
 {
@@ -30,11 +29,16 @@ class PermissionSeeder extends Seeder
             'read-roles',
             'update-roles',
             'delete-roles',
+
+            // API admin ACL
+            'read-permissions',
         ];
 
-        // ایجاد دسترسی‌ها
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+            Permission::firstOrCreate([
+                'name' => $permission,
+                'guard_name' => 'web',
+            ]);
         }
     }
 }

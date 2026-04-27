@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AdminAuthController;
+use App\Http\Controllers\Api\AdminRoleController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\PostController;
@@ -45,6 +46,12 @@ Route::prefix('v1')->name('v1.')->group(function () {
                 Route::get('/profile', [AdminAuthController::class, 'profile'])->name('profile');
                 Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
             });
+
+            Route::get('/roles', [AdminRoleController::class, 'index'])->name('roles.index');
+            Route::post('/roles', [AdminRoleController::class, 'store'])->name('roles.store');
+            Route::get('/roles/{role}', [AdminRoleController::class, 'show'])->name('roles.show');
+            Route::put('/roles/{role}', [AdminRoleController::class, 'update'])->name('roles.update');
+            Route::delete('/roles/{role}', [AdminRoleController::class, 'destroy'])->name('roles.destroy');
         });
     });
 

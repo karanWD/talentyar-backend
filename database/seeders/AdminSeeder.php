@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Admin;
-use App\Services\TenantService;
 use Illuminate\Database\Seeder;
 
 class AdminSeeder extends Seeder
@@ -13,12 +12,17 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
+        $username = env('SUPER_ADMIN_USERNAME', 'superadmin');
+        $password = env('SUPER_ADMIN_PASSWORD', '12345678');
+        $phone = env('SUPER_ADMIN_PHONE', '09120000000');
 
         $admin1 = Admin::firstOrCreate(
-            ['phone' => '09198829176'],
+            ['username' => $username],
             [
-                'name' => 'سیدسیناحسینی',
-                'password' => bcrypt('123456'),
+                'name' => 'Super Admin',
+                'phone' => $phone,
+                'status' => 'active',
+                'password' => $password,
             ]
         );
 
