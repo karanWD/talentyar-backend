@@ -13,10 +13,10 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        $permissions = Permission::query()->where('guard_name', 'web')->pluck('name')->toArray();
+        $permissions = Permission::query()->where('guard_name', 'api-admin')->pluck('name')->toArray();
         $roleSuperAdmin = Role::firstOrCreate([
             'name' => 'SuperAdmin',
-            'guard_name' => 'web',
+            'guard_name' => 'api-admin',
         ], [
             'status' => 'active',
         ]);

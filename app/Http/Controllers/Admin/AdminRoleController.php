@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Api\BaseApiController;
 use App\Models\Role;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -44,7 +45,7 @@ class AdminRoleController extends BaseApiController
 
         $role = Role::create([
             'name' => $validated['name'],
-            'guard_name' => 'web',
+            'guard_name' => 'api-admin',
             'status' => $validated['status'] ?? 'active',
         ]);
         $role->syncPermissions($validated['permissions'] ?? []);

@@ -14,10 +14,10 @@ class PermissionSeeder extends Seeder
     {
         $permissions = [
             // دسته‌بندی‌ها
-            'create-categories',
-            'read-categories',
-            'update-categories',
-            'delete-categories',
+//            'create-categories',
+//            'read-categories',
+//            'update-categories',
+//            'delete-categories',
 
             // ادمین‌ها
             'create-admins',
@@ -37,7 +37,7 @@ class PermissionSeeder extends Seeder
         foreach ($permissions as $permission) {
             Permission::firstOrCreate([
                 'name' => $permission,
-                'guard_name' => 'web',
+                'guard_name' => 'api-admin',
             ]);
         }
     }

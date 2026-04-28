@@ -1,15 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\AdminAuthController;
-use App\Http\Controllers\Api\AdminRoleController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\PublicController;
 use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Employer\AuthController as EmployerAuthController;
-use App\Http\Controllers\Employer\CompanyController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,13 +18,14 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+require __DIR__ . '/admin.php';
 
 Route::prefix('v1')->name('v1.')->group(function () {
-    Route::prefix('admin')->name('admin.')->group(function () {
-        Route::prefix('auth')->name('auth.')->group(function () {
-            Route::post('/login', [AdminAuthController::class, 'login'])->name('login');
-        });
-    });
+//    Route::prefix('admin')->name('admin.')->group(function () {
+//        Route::prefix('auth')->name('auth.')->group(function () {
+//            Route::post('/login', [AdminAuthController::class, 'login'])->name('login');
+//        });
+//    });
 
     // Public routes
     Route::prefix('user')->name('user.')->group(function () {
@@ -38,22 +35,6 @@ Route::prefix('v1')->name('v1.')->group(function () {
         });
     });
 
-
-    // Protected routes (require authentication)
-    Route::middleware('auth:api-admin')->group(function () {
-        Route::prefix('admin')->name('admin.')->group(function () {
-            Route::prefix('auth')->name('auth.')->group(function () {
-                Route::get('/profile', [AdminAuthController::class, 'profile'])->name('profile');
-                Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
-            });
-
-            Route::get('/roles', [AdminRoleController::class, 'index'])->name('roles.index');
-            Route::post('/roles', [AdminRoleController::class, 'store'])->name('roles.store');
-            Route::get('/roles/{role}', [AdminRoleController::class, 'show'])->name('roles.show');
-            Route::put('/roles/{role}', [AdminRoleController::class, 'update'])->name('roles.update');
-            Route::delete('/roles/{role}', [AdminRoleController::class, 'destroy'])->name('roles.destroy');
-        });
-    });
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('user')->name('user.')->group(function () {

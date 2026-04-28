@@ -2,83 +2,87 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
-use App\Services\TenantService;
+use App\Http\Controllers\Api\BaseApiController;
+use App\Models\Admin;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
-class AdminAuthController extends Controller
+class AdminAuthController extends BaseApiController
 {
-    public function showLoginForm()
+    /**
+     * Login admin and issue sanctum token.
+     */
+    public function login(Request $request): JsonResponse
     {
-        return view('admin.panel.auth.login');
-    }
-
-    public function login(Request $request)
-    {
-        $credentials = $request->validate([
-            'phone' => ['required', 'regex:/^09[0-9]{9}$/'],
+        $validated = $request->validate([
+            'username' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
         ]);
 
-        // Tenant scope is automatically applied by TenantScoped trait
-        // But we need to check if admin is active
-        if (Auth::guard('web')->attempt(['phone' => $credentials['phone'], 'password' => $credentials['password']])) {
-            $admin = Auth::guard('web')->user();
-            
-            // Check if admin is active
-            if ($admin && $admin->status !== 'active') {
-                Auth::guard('web')->logout();
-                return back()->withErrors([
-                    'phone' => 'حساب کاربری شما غیرفعال است.',
-                ])->onlyInput('phone');
-            }
-            
-            $request->session()->regenerate();
-            return redirect()->route('admin.dashboard');
+        $admin = Admin::query()
+            ->where('username', $validated['username'])
+            ->where('status', 'active')
+            ->first();
+
+        if (!$admin || !Hash::check($validated['password'], $admin->password)) {
+            return $this->errorResponse('Invalid credentials', 401);
         }
 
-        return back()->withErrors([
-            'phone' => 'شماره تماس یا رمز عبور اشتباه است.',
-        ])->onlyInput('phone');
+        $token = $admin->createToken(
+            name: 'api-token-admin',
+            abilities: ['*'],
+            expiresAt: now()->addDays(30)
+        )->plainTextToken;
+
+        return $this->successResponse(
+            [
+                'token' => $token,
+                'admin' => [
+                    'id' => $admin->id,
+                    'name' => $admin->name,
+                    'username' => $admin->username,
+                    'phone' => $admin->phone,
+                    'status' => $admin->status,
+                    'roles' => $admin->getRoleNames()->values(),
+                ],
+            ],
+            'Login successful'
+        );
     }
 
-    public function logout(Request $request)
+    /**
+     * Get authenticated admin profile.
+     */
+    public function profile(Request $request): JsonResponse
     {
-        Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-        return redirect()->route('admin.login');
+        $admin = $request->user('api-admin');
+
+        return $this->successResponse(
+            [
+                'admin' => [
+                    'id' => $admin->id,
+                    'name' => $admin->name,
+                    'username' => $admin->username,
+                    'phone' => $admin->phone,
+                    'status' => $admin->status,
+                    'roles' => $admin->getRoleNames()->values(),
+                ],
+            ],
+            'Profile retrieved successfully'
+        );
     }
 
-
-    public function show()
+    /**
+     * Logout admin (revoke current token).
+     */
+    public function logout(Request $request): JsonResponse
     {
-        $user = auth()->user();
-        return view('admin.panel.auth.profile', compact('user'));
-    }
+        $request->user('api-admin')->currentAccessToken()?->delete();
 
-    public function update(Request $request)
-    {
-        $user = auth()->user();
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:100',
-            'phone' => 'required|regex:/^09[0-9]{9}$/',
-            'password' => 'nullable|min:6|confirmed',
-        ]);
-
-        $user->fill([
-            'name' => $validated['name'],
-            'phone' => $validated['phone'],
-        ]);
-
-        if (!empty($validated['password'])) {
-            $user->password = bcrypt($validated['password']);
-        }
-
-        $user->save();
-
-        return back()->with('success', 'پروفایل با موفقیت به‌روزرسانی شد ✅');
+        return $this->successResponse(
+            null,
+            'Logged out successfully'
+        );
     }
 }

@@ -1,21 +1,40 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminAuthController;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Livewire\Admins\Admin\Index as AdminsIndex;
-use App\Livewire\Admins\Category\Index as CategoryIndex;
-use App\Livewire\Admins\Roles\Index as RolesIndex;
+use App\Http\Controllers\Admin\AdminRoleController;
 use Illuminate\Support\Facades\Route;
 
+Route::prefix('v1')->name('v1.')->group(function () {
 
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::prefix('auth')->name('auth.')->group(function () {
+            Route::post('/login', [AdminAuthController::class, 'login'])->name('login');
+        });
+    });
 
+    Route::middleware('auth:api-admin')->group(function () {
+        Route::prefix('admin')->name('admin.')->group(function () {
+            Route::prefix('auth')->name('auth.')->group(function () {
+                Route::get('/profile', [AdminAuthController::class, 'profile'])->name('profile');
+                Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
+            });
 
-Route::middleware('admin.auth')->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/profile', [AdminAuthController::class, 'show'])->name('profile');
-    Route::post('/profile', [AdminAuthController::class, 'update'])->name('profile.update');
+            Route::get('/roles', [AdminRoleController::class, 'index'])->name('roles.index');
+            Route::post('/roles', [AdminRoleController::class, 'store'])->name('roles.store');
+            Route::get('/roles/{role}', [AdminRoleController::class, 'show'])->name('roles.show');
+            Route::put('/roles/{role}', [AdminRoleController::class, 'update'])->name('roles.update');
+            Route::delete('/roles/{role}', [AdminRoleController::class, 'destroy'])->name('roles.destroy');
+        });
+    });
 });
 
-Route::get('admin/login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
-Route::post('admin/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
-Route::post('admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+
+//Route::middleware('admin.auth')->prefix('admin')->name('admin.')->group(function () {
+//    Route::get('/profile', [AdminAuthController::class, 'show'])->name('profile');
+//    Route::post('/profile', [AdminAuthController::class, 'update'])->name('profile.update');
+//});
+//
+//Route::get('admin/login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
+//Route::post('admin/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
+//Route::post('admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 

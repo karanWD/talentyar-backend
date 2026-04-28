@@ -20,7 +20,7 @@ class AdminSeeder extends Seeder
             ['username' => $username],
             [
                 'name' => 'Super Admin',
-                'phone' => $phone,
+                'username' => $phone,
                 'status' => 'active',
                 'password' => $password,
             ]
