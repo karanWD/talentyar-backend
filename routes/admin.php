@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminRoleController;
+use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('v1.')->group(function () {
@@ -24,6 +25,11 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('/roles/{role}', [AdminRoleController::class, 'show'])->name('roles.show');
             Route::put('/roles/{role}', [AdminRoleController::class, 'update'])->name('roles.update');
             Route::delete('/roles/{role}', [AdminRoleController::class, 'destroy'])->name('roles.destroy');
+
+
+            Route::get('/users', [UserController::class, 'index'])->name('users.index');
+            Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+
         });
     });
 });

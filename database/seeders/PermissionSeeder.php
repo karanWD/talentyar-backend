@@ -14,10 +14,10 @@ class PermissionSeeder extends Seeder
     {
         $permissions = [
             // دسته‌بندی‌ها
-//            'create-categories',
-//            'read-categories',
-//            'update-categories',
-//            'delete-categories',
+            'create-users',
+            'read-users',
+            'update-users',
+            'delete-users',
 
             // ادمین‌ها
             'create-admins',
