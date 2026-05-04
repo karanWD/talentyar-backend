@@ -22,7 +22,7 @@ class MediaController extends BaseApiController
             'user',
             $request->validated('type', 'file'),
             'default',
-            'public',
+            's3',
             $request->only(['alt'])
         );
 

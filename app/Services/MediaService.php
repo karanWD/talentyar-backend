@@ -14,7 +14,7 @@ class MediaService
         string       $entity_slug,
         string       $type,
         string       $collection = 'default',
-        string       $disk = 'public',
+        string       $disk = 's3',
         array        $metaData = []
     )
     {
