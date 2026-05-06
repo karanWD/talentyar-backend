@@ -39,8 +39,7 @@ class MediaService
 
             Storage::disk($disk)->put(
                 $hashedPath,
-                fopen($file->getRealPath(), 'rb'),
-                'public'
+                fopen($file->getRealPath(), 'rb')
             );
         }
 
