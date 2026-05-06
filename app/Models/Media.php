@@ -88,6 +88,13 @@ class Media extends Model
     public function getUrlAttribute()
     {
       
+      $url = Storage::disk('s3')->temporaryUrl(
+          $path,
+          now()->addMinutes(1)
+      );
+      
+      return $url;
+      
       return Storage::disk('s3')->url($this->path);
 
         $disk = $this->disk ?? 'public';
