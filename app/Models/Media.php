@@ -89,7 +89,7 @@ class Media extends Model
     {
       
       $url = Storage::disk('s3')->temporaryUrl(
-          $path,
+          $this->path,
           now()->addMinutes(1)
       );
       
