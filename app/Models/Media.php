@@ -87,6 +87,9 @@ class Media extends Model
 
     public function getUrlAttribute()
     {
+      
+      return Storage::disk('s3')->url($this->path);
+
         $disk = $this->disk ?? 'public';
 
         // For public disk, construct the URL directly
