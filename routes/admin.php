@@ -13,7 +13,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
         });
     });
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('auth:api-admin')->group(function () {
         Route::prefix('admin')->name('admin.')->group(function () {
             Route::prefix('auth')->name('auth.')->group(function () {
                 Route::get('/profile', [AdminAuthController::class, 'profile'])->name('profile');
