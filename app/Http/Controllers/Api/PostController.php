@@ -50,6 +50,7 @@ class PostController extends BaseApiController
         }
 
         $posts = $user->posts()
+            ->where('state',Post::STATE_PUBLISHED)
             ->withCount(['likes', 'dislikes', 'postViews'])
             ->with(['media', 'user', 'postLikes' => fn ($q) => $q->where('user_id', $user->id)])
             ->latest()
