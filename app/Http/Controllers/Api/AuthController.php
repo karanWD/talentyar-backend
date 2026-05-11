@@ -52,13 +52,12 @@ class AuthController extends BaseApiController
             $url = env('KAVENEGAR_API_KEY','https://api.kavenegar.com/v1/573138633744656C484973353862484B4F4A474A67306671527A48577461426F4F7753445A4849483747303D/verify/lookup.json');
             $data = [
                 'receptor' => $phone,
-                'sender' => env('KAVENEGAR_SENDER'),
-                'template' => env('KAVENEGAR_TEMPLATE'),
+                'sender' => env('KAVENEGAR_SENDER','2000660110'),
+                'template' => env('KAVENEGAR_TEMPLATE','OTP-CODE'),
                 'token' => $otp,
             ];
 
             $response =  Http::asForm()->post($url, $data);
-
             Log::info('OTP', ['response' => $response->body()]);
         }catch (\Exception $exception){
             return response()->json([
