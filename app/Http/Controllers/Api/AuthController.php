@@ -12,6 +12,8 @@ use App\Models\User;
 use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
@@ -45,6 +47,25 @@ class AuthController extends BaseApiController
 
         // Generate OTP
         $otp = $this->otpService->generate($phone);
+
+        try {
+            $url = env('KAVENEGAR_API_KEY','https://api.kavenegar.com/v1/573138633744656C484973353862484B4F4A474A67306671527A48577461426F4F7753445A4849483747303D/verify/lookup.json');
+            $data = [
+                'receptor' => $phone,
+                'sender' => env('KAVENEGAR_SENDER'),
+                'template' => env('KAVENEGAR_TEMPLATE'),
+                'token' => $otp,
+            ];
+
+            $response =  Http::asForm()->post($url, $data);
+
+            Log::info('OTP', ['response' => $response->body()]);
+        }catch (\Exception $exception){
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ]);
+        }
+
 
         // In production, send OTP via SMS service here
         // For now, it's logged (see OtpService)
