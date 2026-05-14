@@ -32,6 +32,10 @@ class PermissionSeeder extends Seeder
 
             // API admin ACL
             'read-permissions',
+
+            // پست‌ها
+            'read-posts',
+            'update-posts',
         ];
 
         foreach ($permissions as $permission) {
