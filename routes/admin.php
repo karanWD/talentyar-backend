@@ -29,7 +29,10 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
 
             Route::get('/users', [UserController::class, 'index'])->name('users.index');
+            Route::post('/users', [UserController::class, 'store'])->name('users.store');
+            Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
             Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+            
 
             Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
             Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');

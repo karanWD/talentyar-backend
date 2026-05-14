@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Api\BaseApiController;
+use App\Http\Requests\Admin\StoreUserRequest;
+use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Http\Resources\PostResource;
 use App\Http\Resources\UserResource;
-use App\Models\Post;
-use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -43,7 +43,36 @@ class UserController extends BaseApiController
         );
     }
 
+    public function store(StoreUserRequest $request): JsonResponse
+    {
+        if ($error = $this->authorizeOrFail($request, 'create-users')) {
+            return $error;
+        }
 
+        $user = User::create($request->validated());
+        $user->loadCount(['followers', 'following', 'posts']);
+
+        return $this->successResponse(
+            ['user' => (new UserResource($user))->resolve()],
+            'User created successfully',
+            201
+        );
+    }
+
+    public function update(UpdateUserRequest $request, User $user): JsonResponse
+    {
+        if ($error = $this->authorizeOrFail($request, 'update-users')) {
+            return $error;
+        }
+
+        $user->update($request->validated());
+        $user->loadCount(['followers', 'following', 'posts']);
+
+        return $this->successResponse(
+            ['user' => (new UserResource($user))->resolve()],
+            'User updated successfully'
+        );
+    }
 
     public function show(Request $request, User $user): JsonResponse
     {
