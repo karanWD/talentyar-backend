@@ -27,7 +27,13 @@ class AdminRoleController extends BaseApiController
 
         $roles = Role::query()->with('permissions:id,name')->paginate($request->integer('per_page', 15));
 
-        return $this->successResponse(['roles' => $roles], 'Roles retrieved successfully');
+        return $this->successResponse(
+            array_merge(
+                ['roles' => $roles->items()],
+                $this->paginationMeta($roles)
+            ),
+            'Roles retrieved successfully'
+        );
     }
 
     public function store(Request $request): JsonResponse

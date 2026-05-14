@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -48,6 +49,32 @@ class BaseApiController extends Controller
         }
 
         return response()->json($response, $statusCode);
+    }
+
+    /**
+     * Standard pagination payload for `paginate()` results (sibling to list keys in `data`).
+     *
+     * @return array{pagination: array<string, mixed>}
+     */
+    protected function paginationMeta(LengthAwarePaginator $paginator): array
+    {
+        return [
+            'pagination' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+                'has_more_pages' => $paginator->hasMorePages(),
+                'links' => [
+                    'first' => $paginator->url(1),
+                    'last' => $paginator->url($paginator->lastPage()),
+                    'prev' => $paginator->previousPageUrl(),
+                    'next' => $paginator->nextPageUrl(),
+                ],
+            ],
+        ];
     }
 }
 

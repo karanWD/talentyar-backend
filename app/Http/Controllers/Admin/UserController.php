@@ -34,7 +34,13 @@ class UserController extends BaseApiController
             ->latest()
             ->paginate();
 
-        return $this->successResponse(['users' => UserResource::collection($users),], 'Users retrieved successfully');
+        return $this->successResponse(
+            array_merge(
+                ['users' => UserResource::collection($users)->resolve()],
+                $this->paginationMeta($users)
+            ),
+            'Users retrieved successfully'
+        );
     }
 
 
@@ -55,10 +61,16 @@ class UserController extends BaseApiController
             ->paginate($perPage)
             ->withQueryString();
 
-        return $this->successResponse([
-            'user' => new UserResource($user),
-            'posts' => PostResource::collection($posts),
-        ], 'User Details retrieved successfully');
+        return $this->successResponse(
+            array_merge(
+                [
+                    'user' => (new UserResource($user))->resolve(),
+                    'posts' => PostResource::collection($posts)->resolve(),
+                ],
+                $this->paginationMeta($posts)
+            ),
+            'User Details retrieved successfully'
+        );
 
     }
 

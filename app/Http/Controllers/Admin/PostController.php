@@ -52,7 +52,10 @@ class PostController extends BaseApiController
             ->withQueryString();
 
         return $this->successResponse(
-            ['posts' => PostResource::collection($posts)],
+            array_merge(
+                ['posts' => PostResource::collection($posts)->resolve()],
+                $this->paginationMeta($posts)
+            ),
             'Posts retrieved successfully'
         );
     }
