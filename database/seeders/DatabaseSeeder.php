@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             ProvinceSeeder::class,
             CitySeeder::class,
+            PlanSeeder::class,
             UserSeeder::class,
             PostCommentLikeSeeder::class,
         ]);

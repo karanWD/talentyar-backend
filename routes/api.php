@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\MediaController;
+use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\PublicController;
 use App\Http\Controllers\Api\UserController;
@@ -86,5 +87,6 @@ Route::prefix('v1')->name('v1.')->group(function () {
     Route::prefix('public')->name('public.')->group(function () {
         Route::get('/provinces', [PublicController::class, 'getProvinces'])->name('provinces');
         Route::get('/cities', [PublicController::class, 'getCities'])->name('cities');
+        Route::get('/plans', [PlanController::class, 'index'])->name('plans');
     });
 });
