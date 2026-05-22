@@ -32,7 +32,7 @@ class UserController extends BaseApiController
 
         $users = User::query()
             ->latest()
-            ->paginate();
+            ->paginate($request->integer('per_page', 15));
 
         return $this->successResponse(
             array_merge(
