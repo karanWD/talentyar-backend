@@ -32,9 +32,11 @@ class SubscriptionController extends BaseApiController
             return $this->errorResponse('User already has an active subscription', 400);
         }
 
+
+        // todo:: add active for test
         $subscription = $user->subscriptions()->create([
             'plan_id' => $plan->id,
-            'status' => Subscription::STATUS_PENDING,
+            'status' => Subscription::STATUS_ACTIVE,
             'price_paid' => $plan->price ?? 0,
             'discount_price' => $plan->discount_price ?? 0,
             'started_at' => now(),
