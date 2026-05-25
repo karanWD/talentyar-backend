@@ -47,6 +47,7 @@ class UserResource extends BaseResource
                 $media = $file ?? $fallback;
                 return $media ? new MinimalMediaResource($media) : null;
             }),
+            'subscription' => new SubscriptionResource($this->activeSubscription),
             // Merge in the timestamps, if any
             ...$this->includeTimestamps(),
         ];
