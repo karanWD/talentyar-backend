@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\PublicController;
+use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -80,6 +81,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
             Route::get('/users/search', [UserController::class, 'search'])->name('users.search');
             Route::get('/users/{username}', [UserController::class, 'showByUsername'])->name('users.show');
+
+            Route::post('/subscription/purchase', [SubscriptionController::class, 'purchase'])->name('subscription.purchase');
+            Route::get('/subscription', [SubscriptionController::class, 'getActiveSubscription'])->name('subscription.active');
         });
     });
 

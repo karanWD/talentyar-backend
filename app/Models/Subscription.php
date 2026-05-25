@@ -34,8 +34,8 @@ class Subscription extends Model
     protected function casts(): array
     {
         return [
-            'price_paid' => 'decimal',
-            'discount_price' => 'decimal',
+            'price_paid' => 'decimal:0',
+            'discount_price' => 'decimal:2',
             'started_at' => 'datetime',
             'expires_at' => 'datetime',
             'cancelled_at' => 'datetime',
