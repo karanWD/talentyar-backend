@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\UploadMediaRequest;
 use App\Http\Resources\MediaResource;
+use App\Models\Media;
 use App\Services\MediaService;
 use Illuminate\Http\JsonResponse;
 
@@ -20,7 +21,7 @@ class MediaController extends BaseApiController
         $media = $mediaService->addMediaFromUploadedFile(
             $file,
             'user',
-            $request->validated('type', 'file'),
+            $request->validated('type', Media::TYPE_FILE),
             'default',
             's3',
             $request->only(['alt'])

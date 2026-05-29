@@ -39,6 +39,7 @@ class Media extends Model
     const TYPE_LOGO = 'logo';
     const TYPE_BANNER = 'banner';
     const TYPE_THUMBNAIL = 'thumbnail';
+    const TYPE_EVALUATION = 'evaluation';
     const TYPE = [
         self::TYPE_NONE,
         self::TYPE_DOC,
@@ -49,6 +50,7 @@ class Media extends Model
         self::TYPE_LOGO,
         self::TYPE_BANNER,
         self::TYPE_THUMBNAIL,
+        self::TYPE_EVALUATION,
     ];
 
     public function entity(): MorphTo

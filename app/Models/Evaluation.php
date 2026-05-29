@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Evaluation extends Model
 {
-    //
     const status_pending = 'pending';
+
     const status_approved = 'approved';
+
     const status_rejected = 'rejected';
 
     const STATUSES = [
@@ -16,4 +19,14 @@ class Evaluation extends Model
         self::status_approved,
         self::status_rejected,
     ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(EvaluationItem::class);
+    }
 }

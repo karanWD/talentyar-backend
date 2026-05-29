@@ -108,6 +108,11 @@ class User extends Authenticatable
         return $this->hasMany(Post::class);
     }
 
+    public function evaluations(): HasMany
+    {
+        return $this->hasMany(Evaluation::class);
+    }
+
     /**
      * Users that this user follows.
      */

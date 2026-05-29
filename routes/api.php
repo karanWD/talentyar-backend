@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\EvaluationController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\PlanController;
@@ -80,6 +81,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/posts/{post}/view', [PostController::class, 'recordView'])->name('posts.view');
 
             Route::get('/users/search', [UserController::class, 'search'])->name('users.search');
+            Route::get('/evaluations/months', [EvaluationController::class, 'months'])->name('evaluations.months');
+            Route::post('/evaluations/media', [EvaluationController::class, 'upload'])->name('evaluations.months');
             Route::get('/users/{username}', [UserController::class, 'showByUsername'])->name('users.show');
 
             Route::post('/subscription/purchase', [SubscriptionController::class, 'purchase'])->name('subscription.purchase');
