@@ -81,8 +81,11 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/posts/{post}/view', [PostController::class, 'recordView'])->name('posts.view');
 
             Route::get('/users/search', [UserController::class, 'search'])->name('users.search');
+
             Route::get('/evaluations/months', [EvaluationController::class, 'months'])->name('evaluations.months');
-            Route::post('/evaluations/media', [EvaluationController::class, 'upload'])->name('evaluations.months');
+            Route::post('/evaluations/media', [EvaluationController::class, 'upload'])->name('evaluations.upload');
+            Route::post('/evaluations/store', [EvaluationController::class, 'store'])->name('evaluations.store');
+
             Route::get('/users/{username}', [UserController::class, 'showByUsername'])->name('users.show');
 
             Route::post('/subscription/purchase', [SubscriptionController::class, 'purchase'])->name('subscription.purchase');

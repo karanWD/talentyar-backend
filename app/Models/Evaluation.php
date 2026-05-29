@@ -8,6 +8,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Evaluation extends Model
 {
+    use \App\Traits\MediaTrait;
+
+    public $fillable = [
+        'user_id',
+        'score',
+        'pros_comment',
+        'cons_comment',
+        'status'
+    ];
+
     const status_pending = 'pending';
 
     const status_approved = 'approved';

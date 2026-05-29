@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Requests\UploadMediaRequest;
 use App\Http\Resources\EvaluationResource;
 use App\Http\Resources\MediaResource;
+use App\Http\Resources\PostResource;
+use App\Models\Evaluation;
 use App\Models\Media;
+use App\Models\Post;
 use App\Services\MediaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -83,6 +86,27 @@ class EvaluationController extends BaseApiController
                 'hash' => $media->hash,
             ],
             'Media uploaded successfully',
+            201
+        );
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $post = Evaluation::create([
+            'user_id' => $user->id,
+        ]);
+
+        $videoMedia = Media::where('hash', $request->get('video_hash'))->first();
+        $post->assignMedia($videoMedia, 'video');
+
+
+        $post->load('media');
+
+        return $this->successResponse(
+            ['post' => new EvaluationResource($post)],
+            'Evaluation created successfully',
             201
         );
     }
