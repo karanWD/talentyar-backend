@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminRoleController;
 use App\Http\Controllers\Admin\EvaluationsController;
+use App\Http\Controllers\Admin\ItemController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +44,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('/evaluations', [EvaluationsController::class, 'index'])->name('evaluations.index');
             Route::get('/evaluations/{evaluation}', [EvaluationsController::class, 'show'])->name('evaluations.show');
             Route::post('/evaluations/{evaluation}/store', [EvaluationsController::class, 'store'])->name('evaluations.store');
+
+            Route::get('/items', [ItemController::class, 'index'])->name('items.index');
         });
     });
 });
@@ -56,4 +59,3 @@ Route::prefix('v1')->name('v1.')->group(function () {
 //Route::get('admin/login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
 //Route::post('admin/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
 //Route::post('admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
-

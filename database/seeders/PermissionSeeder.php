@@ -39,6 +39,8 @@ class PermissionSeeder extends Seeder
 
             'read-evaluation',
             'update-evaluation',
+
+            'read-items',
         ];
 
         foreach ($permissions as $permission) {

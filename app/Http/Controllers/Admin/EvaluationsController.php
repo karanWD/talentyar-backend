@@ -4,11 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Resources\EvaluationResource;
-use App\Http\Resources\PostResource;
 use App\Models\Evaluation;
-use App\Models\Post;
+use App\Models\EvaluationItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class EvaluationsController extends BaseApiController
 {
@@ -23,7 +24,7 @@ class EvaluationsController extends BaseApiController
     }
 
     /**
-     * Paginated list of posts (optional filters: state, user_id, search).
+     * Paginated list of evaluations.
      */
     public function index(Request $request): JsonResponse
     {
@@ -32,7 +33,7 @@ class EvaluationsController extends BaseApiController
         }
 
         $query = Evaluation::query()
-            ->with(['user', 'media']);
+            ->with(['user', 'media', 'items.item']);
 
 
         if ($request->filled('user_id')) {
@@ -46,7 +47,7 @@ class EvaluationsController extends BaseApiController
 
         return $this->successResponse(
             array_merge(
-                ['posts' => EvaluationResource::collection($evaluations)->resolve()],
+                ['evaluations' => EvaluationResource::collection($evaluations)->resolve()],
                 $this->paginationMeta($evaluations)
             ),
             'Evaluations retrieved successfully'
@@ -54,7 +55,7 @@ class EvaluationsController extends BaseApiController
     }
 
     /**
-     * Single post detail.
+     * Single evaluation detail.
      */
     public function show(Request $request, Evaluation $evaluation): JsonResponse
     {
@@ -62,18 +63,18 @@ class EvaluationsController extends BaseApiController
             return $error;
         }
 
-        $evaluation->load(['user', 'media']);
+        $evaluation->load(['user', 'media', 'items.item']);
 
         return $this->successResponse(
-            ['post' => new EvaluationResource($evaluation)],
+            ['evaluation' => new EvaluationResource($evaluation)],
             'Evaluation retrieved successfully'
         );
     }
 
     /**
-     * Update post moderation state (published, draft, rejected).
+     * Store admin evaluation comments and item scores.
      */
-    public function store(Request $request, Post $post): JsonResponse
+    public function store(Request $request, Evaluation $evaluation): JsonResponse
     {
         if ($error = $this->authorizeOrFail($request, 'update-evaluation')) {
             return $error;
@@ -82,7 +83,37 @@ class EvaluationsController extends BaseApiController
         $validated = $request->validate([
             'pros_comment' => ['required', 'string'],
             'cons_comment' => ['required', 'string'],
+            'score' => ['nullable', 'numeric', 'min:0'],
+            'status' => ['nullable', Rule::in(Evaluation::STATUSES)],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.item_id' => ['required', 'integer', 'distinct', 'exists:items,id'],
+            'items.*.score' => ['required', 'integer', 'min:0'],
         ]);
 
+        DB::transaction(function () use ($evaluation, $validated) {
+            $items = collect($validated['items']);
+
+            $evaluation->update([
+                'pros_comment' => $validated['pros_comment'],
+                'cons_comment' => $validated['cons_comment'],
+                'score' => $validated['score'] ?? round($items->avg('score'), 2),
+                'status' => $validated['status'] ?? Evaluation::status_approved,
+            ]);
+
+            $evaluation->items()->delete();
+
+            $items->each(fn (array $item) => EvaluationItem::create([
+                'evaluation_id' => $evaluation->id,
+                'item_id' => $item['item_id'],
+                'score' => $item['score'],
+            ]));
+        });
+
+        $evaluation->load(['user', 'media', 'items.item']);
+
+        return $this->successResponse(
+            ['evaluation' => new EvaluationResource($evaluation)],
+            'Evaluation stored successfully'
+        );
     }
 }

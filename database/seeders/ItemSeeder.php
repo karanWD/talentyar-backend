@@ -12,18 +12,18 @@ class ItemSeeder extends Seeder
      */
     public function run(): void
     {
-        Item::firstOrCreate(
-            ['name' => 'قدرت حمل توپ', 'type' => 'football']
-        );
-        Item::firstOrCreate(
-            ['name' => 'قدرت پاس', 'type' => 'football']
-        );
-        Item::firstOrCreate(
-            ['name' => 'قدرت شوت', 'type' => 'football']
-        );
-        Item::firstOrCreate(
-            ['name' => 'دقت شوت', 'type' => 'football']
-        );
-    }
+        $items = [
+            'کنترل توپ',
+            'چابکی و تغییر مسیر',
+            'سرعت با توپ',
+            'پاس',
+            'شوت',
+        ];
 
+        foreach ($items as $item) {
+            Item::firstOrCreate(
+                ['name' => $item, 'type' => 'football']
+            );
+        }
+    }
 }
