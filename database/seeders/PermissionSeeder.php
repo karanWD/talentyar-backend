@@ -36,6 +36,9 @@ class PermissionSeeder extends Seeder
             // پست‌ها
             'read-posts',
             'update-posts',
+
+            'read-evaluation',
+            'update-evaluation',
         ];
 
         foreach ($permissions as $permission) {

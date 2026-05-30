@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminRoleController;
+use App\Http\Controllers\Admin\EvaluationsController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -32,11 +33,16 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/users', [UserController::class, 'store'])->name('users.store');
             Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
             Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
-            
+
 
             Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
             Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
             Route::post('/posts/{post}/state', [PostController::class, 'updateState'])->name('posts.state');
+
+
+            Route::get('/evaluations', [EvaluationsController::class, 'index'])->name('evaluations.index');
+            Route::get('/evaluations/{evaluation}', [EvaluationsController::class, 'show'])->name('evaluations.show');
+            Route::post('/evaluations/{evaluation}/store', [EvaluationsController::class, 'store'])->name('evaluations.store');
         });
     });
 });
