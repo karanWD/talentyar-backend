@@ -33,7 +33,8 @@ class EvaluationController extends BaseApiController
 
     public function months(Request $request): JsonResponse
     {
-        $year = $request->integer('year', Jalalian::now()->getYear());
+        $now = Jalalian::now();
+        $year = $request->integer('year', $now->getYear());
 
         if ($year < 1000 || $year > 3000) {
             return $this->errorResponse('Invalid Jalali year', 422);
@@ -51,14 +52,23 @@ class EvaluationController extends BaseApiController
             ->get()
             ->groupBy(fn ($evaluation) => Jalalian::fromCarbon($evaluation->created_at)->getMonth());
 
-        $months = collect(self::JALALI_MONTHS)->map(fn (string $name, int $month) => [
+        $lastVisibleMonth = match (true) {
+            $year < $now->getYear() => 12,
+            $year === $now->getYear() => $now->getMonth(),
+            default => 0,
+        };
+
+        $months = collect(self::JALALI_MONTHS)
+            ->filter(fn (string $name, int $month) => $month <= $lastVisibleMonth)
+            ->map(fn (string $name, int $month) => [
             'month' => $month,
             'name' => $name,
             'has_evaluation' => $evaluations->has($month),
             'evaluation' => $evaluations->has($month)
                 ? new EvaluationResource($evaluations->get($month)->first())
                 : null,
-        ])->values();
+            ])
+            ->values();
 
         return $this->successResponse([
             'year' => $year,
