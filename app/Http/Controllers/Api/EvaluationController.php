@@ -64,6 +64,9 @@ class EvaluationController extends BaseApiController
             'month' => $month,
             'name' => $name,
             'has_evaluation' => $evaluations->has($month),
+            'can_upload' => $year === $now->getYear()
+                && $month === $now->getMonth()
+                && ! $evaluations->has($month),
             'evaluation' => $evaluations->has($month)
                 ? new EvaluationResource($evaluations->get($month)->first())
                 : null,
