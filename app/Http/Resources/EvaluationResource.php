@@ -18,6 +18,7 @@ class EvaluationResource extends BaseResource
             'pros_comment' => $this->pros_comment,
             'cons_comment' => $this->cons_comment,
             'status' => $this->status,
+            'media' => $this->whenLoaded('media', fn () => MediaResource::collection($this->media)),
             'jalali_date' => $this->created_at
                 ? Jalalian::fromCarbon($this->created_at)->format('Y/m/d')
                 : null,

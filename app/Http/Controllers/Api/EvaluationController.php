@@ -45,7 +45,7 @@ class EvaluationController extends BaseApiController
 
         $evaluations = $request->user()
             ->evaluations()
-            ->with(['items.item'])
+            ->with(['media', 'items.item'])
             ->where('created_at', '>=', $startDate)
             ->where('created_at', '<', $endDate)
             ->latest()
