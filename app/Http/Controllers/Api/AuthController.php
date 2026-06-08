@@ -92,17 +92,17 @@ class AuthController extends BaseApiController
         $otp = $validated['otp'];
 
         // Verify OTP
-//        if (!$this->otpService->verify($phone, $otp)) {
-//            throw ValidationException::withMessages([
-//                'otp' => ['Invalid or expired OTP.'],
-//            ]);
-//        }
-
-        if ($otp != 1111){
+        if (!$this->otpService->verify($phone, $otp)) {
             throw ValidationException::withMessages([
                 'otp' => ['Invalid or expired OTP.'],
             ]);
         }
+
+//        if ($otp != 1111){
+//            throw ValidationException::withMessages([
+//                'otp' => ['Invalid or expired OTP.'],
+//            ]);
+//        }
 
         $firstUserExists = User::where('phone', $phone)->exists();
 
