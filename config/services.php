@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'analyzer' => [
+        'url' => env('ANALYZER_URL', 'http://109.122.249.234:3000/api/v1/analyze'),
+    ],
+
 ];
