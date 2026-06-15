@@ -18,8 +18,8 @@ class DatabaseSeeder extends Seeder
             ProvinceSeeder::class,
             CitySeeder::class,
             PlanSeeder::class,
-            UserSeeder::class,
-            PostCommentLikeSeeder::class,
+//            UserSeeder::class,
+//            PostCommentLikeSeeder::class,
             ItemSeeder::class,
         ]);
     }
