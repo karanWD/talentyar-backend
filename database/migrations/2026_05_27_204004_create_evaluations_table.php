@@ -16,8 +16,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('score')->nullable();
-            $table->string('pros_comment')->nullable();
-            $table->string('cons_comment')->nullable();
+            $table->text('pros_comment')->nullable();
+            $table->text('cons_comment')->nullable();
+            $table->text('suggestion')->nullable();
+            $table->text('summary')->nullable();
             $table->enum('status',Evaluation::STATUSES)->default(Evaluation::status_pending);
             $table->timestamps();
         });

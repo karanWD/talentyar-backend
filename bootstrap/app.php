@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'service.token' => \App\Http\Middleware\EnsureValidServiceToken::class,
         ]);
         $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
     })

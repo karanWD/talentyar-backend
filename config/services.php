@@ -39,4 +39,8 @@ return [
         'url' => env('ANALYZER_URL', 'http://109.122.249.234:3000/api/v1/analyze'),
     ],
 
+    'evaluation_service' => [
+        'token' => env('EVALUATION_SERVICE_TOKEN','kbyaagzNTcnaV-BYLBYTFHKPuYKqBH4BLJnhWy-jNnI'),
+    ],
+
 ];

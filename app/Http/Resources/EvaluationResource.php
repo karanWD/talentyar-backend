@@ -17,6 +17,8 @@ class EvaluationResource extends BaseResource
             'score' => $this->score,
             'pros_comment' => $this->pros_comment,
             'cons_comment' => $this->cons_comment,
+            'suggestion' => $this->suggestion,
+            'summary' => $this->summary,
             'status' => $this->status,
             'media' => $this->whenLoaded('media', fn () => MediaResource::collection($this->media)),
             'jalali_date' => $this->created_at

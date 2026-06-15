@@ -99,15 +99,15 @@ class Media extends Model
 
       return Storage::disk('s3')->url($this->path);
 
-        $disk = $this->disk ?? 'public';
-
-        // For public disk, construct the URL directly
-        if ($disk === 'public') {
-            return config('app.url') . '/storage/' . ltrim($this->path, '/');
-        }
-
-        // For other disks, you may need to implement a route/controller to serve files
-        // For now, return the storage URL
-        return config('app.url') . '/storage/' . ltrim($this->path, '/');
+//        $disk = $this->disk ?? 'public';
+//
+//        // For public disk, construct the URL directly
+//        if ($disk === 'public') {
+//            return config('app.url') . '/storage/' . ltrim($this->path, '/');
+//        }
+//
+//        // For other disks, you may need to implement a route/controller to serve files
+//        // For now, return the storage URL
+//        return config('app.url') . '/storage/' . ltrim($this->path, '/');
     }
 }

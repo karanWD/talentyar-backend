@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\PublicController;
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Service\EvaluationsController as ServiceEvaluationsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -98,5 +99,11 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::get('/provinces', [PublicController::class, 'getProvinces'])->name('provinces');
         Route::get('/cities', [PublicController::class, 'getCities'])->name('cities');
         Route::get('/plans', [PlanController::class, 'index'])->name('plans');
+    });
+
+    Route::middleware('service.token')->prefix('service')->name('service.')->group(function () {
+        Route::get('/evaluations', [ServiceEvaluationsController::class, 'index'])->name('evaluations.index');
+        Route::get('/evaluations/{evaluation}', [ServiceEvaluationsController::class, 'show'])->name('evaluations.show');
+        Route::post('/evaluations/{evaluation}/store', [ServiceEvaluationsController::class, 'store'])->name('evaluations.store');
     });
 });

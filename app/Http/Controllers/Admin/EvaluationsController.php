@@ -83,6 +83,8 @@ class EvaluationsController extends BaseApiController
         $validated = $request->validate([
             'pros_comment' => ['required', 'string'],
             'cons_comment' => ['required', 'string'],
+            'suggestion' => ['required', 'string'],
+            'summary' => ['required', 'string'],
             'score' => ['nullable', 'numeric', 'min:0'],
             'status' => ['nullable', Rule::in(Evaluation::STATUSES)],
             'items' => ['required', 'array', 'min:1'],
@@ -96,6 +98,8 @@ class EvaluationsController extends BaseApiController
             $evaluation->update([
                 'pros_comment' => $validated['pros_comment'],
                 'cons_comment' => $validated['cons_comment'],
+                'suggestion' => $validated['suggestion'],
+                'summary' => $validated['summary'],
                 'score' => $validated['score'] ?? round($items->avg('score'), 2),
                 'status' => $validated['status'] ?? Evaluation::status_approved,
             ]);

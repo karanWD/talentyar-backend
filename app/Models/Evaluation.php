@@ -15,6 +15,8 @@ class Evaluation extends Model
         'score',
         'pros_comment',
         'cons_comment',
+        'suggestion',
+        'summary',
         'status'
     ];
 
