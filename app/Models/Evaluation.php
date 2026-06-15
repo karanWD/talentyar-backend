@@ -17,7 +17,19 @@ class Evaluation extends Model
         'cons_comment',
         'suggestion',
         'summary',
-        'status'
+        'status',
+        'analyzer_status',
+        'analyzer_attempts',
+        'analyzer_failure_count',
+        'analyzer_success_count',
+        'analyzer_last_error',
+        'analyzer_last_attempt_at',
+        'analyzer_succeeded_at',
+    ];
+
+    protected $casts = [
+        'analyzer_last_attempt_at' => 'datetime',
+        'analyzer_succeeded_at' => 'datetime',
     ];
 
     const status_pending = 'pending';
@@ -30,6 +42,22 @@ class Evaluation extends Model
         self::status_pending,
         self::status_approved,
         self::status_rejected,
+    ];
+
+    const ANALYZER_STATUS_PENDING = 'pending';
+    const ANALYZER_STATUS_PROCESSING = 'processing';
+    const ANALYZER_STATUS_RETRYING = 'retrying';
+    const ANALYZER_STATUS_SUCCEEDED = 'succeeded';
+    const ANALYZER_STATUS_FAILED = 'failed';
+    const ANALYZER_STATUS_SKIPPED = 'skipped';
+
+    const ANALYZER_STATUSES = [
+        self::ANALYZER_STATUS_PENDING,
+        self::ANALYZER_STATUS_PROCESSING,
+        self::ANALYZER_STATUS_RETRYING,
+        self::ANALYZER_STATUS_SUCCEEDED,
+        self::ANALYZER_STATUS_FAILED,
+        self::ANALYZER_STATUS_SKIPPED,
     ];
 
     public function user(): BelongsTo

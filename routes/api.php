@@ -104,6 +104,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
     Route::middleware('service.token')->prefix('service')->name('service.')->group(function () {
         Route::get('/evaluations', [ServiceEvaluationsController::class, 'index'])->name('evaluations.index');
         Route::get('/evaluations/{evaluation}', [ServiceEvaluationsController::class, 'show'])->name('evaluations.show');
+        Route::get('/evaluations/{evaluation}/analysis-status', [ServiceEvaluationsController::class, 'analysisStatus'])->name('evaluations.analysis-status');
         Route::post('/evaluations/{evaluation}/store', [ServiceEvaluationsController::class, 'store'])->name('evaluations.store');
     });
 });

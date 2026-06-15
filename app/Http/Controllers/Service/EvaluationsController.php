@@ -22,6 +22,10 @@ class EvaluationsController extends BaseApiController
             $query->where('user_id', $request->integer('user_id'));
         }
 
+        if ($request->filled('analyzer_status')) {
+            $query->where('analyzer_status', $request->string('analyzer_status')->toString());
+        }
+
         $evaluations = $query
             ->latest()
             ->paginate($request->integer('per_page', 15))
@@ -86,6 +90,27 @@ class EvaluationsController extends BaseApiController
         return $this->successResponse(
             ['evaluation' => new EvaluationResource($evaluation)],
             'Evaluation stored successfully'
+        );
+    }
+
+    public function analysisStatus(Evaluation $evaluation): JsonResponse
+    {
+        return $this->successResponse(
+            [
+                'evaluation_id' => $evaluation->id,
+                'evaluation_status' => $evaluation->status,
+                'analyzer' => [
+                    'status' => $evaluation->analyzer_status ?? Evaluation::ANALYZER_STATUS_PENDING,
+                    'attempts' => (int) $evaluation->analyzer_attempts,
+                    'configured_max_tries' => (new \App\Jobs\AnalyzeEvaluationVideo($evaluation->id))->tries,
+                    'failure_count' => (int) $evaluation->analyzer_failure_count,
+                    'success_count' => (int) $evaluation->analyzer_success_count,
+                    'last_error' => $evaluation->analyzer_last_error,
+                    'last_attempt_at' => $evaluation->analyzer_last_attempt_at?->toIso8601String(),
+                    'succeeded_at' => $evaluation->analyzer_succeeded_at?->toIso8601String(),
+                ],
+            ],
+            'Evaluation analyzer status retrieved successfully'
         );
     }
 }

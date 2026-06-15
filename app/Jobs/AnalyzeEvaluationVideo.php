@@ -13,6 +13,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class AnalyzeEvaluationVideo implements ShouldQueue
 {
@@ -41,9 +42,20 @@ class AnalyzeEvaluationVideo implements ShouldQueue
             return;
         }
 
+        $evaluation->update([
+            'analyzer_status' => Evaluation::ANALYZER_STATUS_PROCESSING,
+            'analyzer_attempts' => $this->attempts(),
+            'analyzer_last_attempt_at' => now(),
+        ]);
+
         $videoMedia = $evaluation->media->firstWhere('collection', 'video') ?? $evaluation->media->first();
 
         if (! $videoMedia) {
+            $evaluation->update([
+                'analyzer_status' => Evaluation::ANALYZER_STATUS_SKIPPED,
+                'analyzer_last_error' => 'No video media was attached to this evaluation.',
+            ]);
+
             Log::warning('Evaluation analyze job skipped because no video media was attached.', [
                 'evaluation_id' => $evaluation->id,
             ]);
@@ -62,16 +74,35 @@ class AnalyzeEvaluationVideo implements ShouldQueue
             ],
         ];
 
-        $response = Http::timeout(30)
-            ->acceptJson()
-            ->post(config('services.analyzer.url'), $payload);
+        try {
+            $response = Http::timeout(30)
+                ->acceptJson()
+                ->post(config('services.analyzer.url'), $payload);
 
-        $response->throw();
+            $response->throw();
 
-        Log::info('Evaluation video sent to analyzer successfully.', [
-            'evaluation_id' => $evaluation->id,
-            'status' => $response->status(),
-        ]);
+            $evaluation->increment('analyzer_success_count');
+            $evaluation->update([
+                'analyzer_status' => Evaluation::ANALYZER_STATUS_SUCCEEDED,
+                'analyzer_last_error' => null,
+                'analyzer_succeeded_at' => now(),
+            ]);
+
+            Log::info('Evaluation video sent to analyzer successfully.', [
+                'evaluation_id' => $evaluation->id,
+                'status' => $response->status(),
+            ]);
+        } catch (Throwable $exception) {
+            $evaluation->increment('analyzer_failure_count');
+            $evaluation->update([
+                'analyzer_status' => $this->attempts() >= $this->tries
+                    ? Evaluation::ANALYZER_STATUS_FAILED
+                    : Evaluation::ANALYZER_STATUS_RETRYING,
+                'analyzer_last_error' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
+        }
     }
 
     private function resolveAge(?string $birthDate): ?int

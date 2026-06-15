@@ -112,6 +112,7 @@ class EvaluationController extends BaseApiController
 
         $post = Evaluation::create([
             'user_id' => $user->id,
+            'analyzer_status' => Evaluation::ANALYZER_STATUS_PENDING,
         ]);
 
         $videoMedia = Media::where('hash', $validated['video_hash'])->firstOrFail();
