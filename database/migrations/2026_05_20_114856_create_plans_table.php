@@ -20,6 +20,7 @@ return new class extends Migration
             $table->enum('type', \App\Models\Plan::TYPE)->default(\App\Models\Plan::TYPE_BASIC);
             $table->enum('status', \App\Models\Plan::STATUS)->default(\App\Models\Plan::STATUS_ACTIVE);
             $table->text('description')->nullable();
+            $table->text('features')->nullable();
             $table->timestamps();
         });
     }

@@ -83,15 +83,16 @@ class PlanSeeder extends Seeder
                         'duration' => $duration,
                         'type' => $type,
                         'status' => Plan::STATUS_ACTIVE,
-                        'description' => $this->buildDescription($planData['title'], $planData['subtitle'], $planData['features']),
+                        'description' => $this->buildDescription($planData['title'], $planData['subtitle']),
+                        'features' => trim(implode(PHP_EOL, $planData['features']))
                     ]
                 );
             }
         }
     }
 
-    private function buildDescription(string $title, string $subtitle, array $features): string
+    private function buildDescription(string $title, string $subtitle): string
     {
-        return trim($title . PHP_EOL . $subtitle . PHP_EOL . PHP_EOL . implode(PHP_EOL, $features));
+        return trim($title . PHP_EOL . $subtitle . PHP_EOL);
     }
 }
