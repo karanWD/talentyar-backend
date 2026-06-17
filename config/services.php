@@ -40,7 +40,16 @@ return [
     ],
 
     'evaluation_service' => [
-        'token' => env('EVALUATION_SERVICE_TOKEN','kbyaagzNTcnaV-BYLBYTFHKPuYKqBH4BLJnhWy-jNnI'),
+        'token' => env('EVALUATION_SERVICE_TOKEN', 'kbyaagzNTcnaV-BYLBYTFHKPuYKqBH4BLJnhWy-jNnI'),
+    ],
+
+    'bitpay' => [
+        'api' => env('BITPAY_API','efb05-a9246-fc73b-13faa-e9f11f5c20b4b17aab1e4cfc1da4'),
+        'gateway_send_url' => env('BITPAY_GATEWAY_SEND_URL', 'https://bitpay.ir/payment/gateway-send'),
+        'gateway_result_url' => env('BITPAY_GATEWAY_RESULT_URL', 'https://bitpay.ir/payment/gateway-result-second'),
+        'gateway_url' => env('BITPAY_GATEWAY_URL', 'https://bitpay.ir/payment/gateway-%s-get'),
+        'timeout' => (int) env('BITPAY_TIMEOUT', 15),
+        'verify_ssl' => (bool) env('BITPAY_VERIFY_SSL', true),
     ],
 
 ];

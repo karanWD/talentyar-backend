@@ -10,6 +10,7 @@ use App\Models\Plan;
 use App\Models\Post;
 use App\Models\Subscription;
 use App\Models\User;
+use App\Services\BitpayPaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -31,6 +32,9 @@ class SubscriptionController extends BaseApiController
         if ($user->activeSubscription()->exists()) {
             return $this->errorResponse('User already has an active subscription', 400);
         }
+
+        $payment = new BitpayPaymentService();
+        dd($payment->requestPayment($plan->price, 'http://127.0.0.1:8042/api' , 2,'sina','sina6G@gmail.com','description'));
 
 
         // todo:: add active for test
