@@ -34,7 +34,7 @@ class SubscriptionController extends BaseApiController
         }
 
         $payment = new BitpayPaymentService();
-        dd($payment->requestPayment($plan->price, 'http://127.0.0.1:8042/api' , 2,'sina','sina6G@gmail.com','description'));
+        dd($payment->requestPayment($plan->price, 'https://api.talentyar.com/api' , 2,'sina','sina6G@gmail.com','description'));
 
 
         // todo:: add active for test
