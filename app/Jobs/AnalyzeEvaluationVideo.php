@@ -64,6 +64,7 @@ class AnalyzeEvaluationVideo implements ShouldQueue
         }
 
         $payload = [
+            'evaluation_id' => $evaluation->id,
             'videoUrl' => $videoMedia->url,
             'userInfo' => [
                 'age' => $this->resolveAge($evaluation->user?->birth_date),
