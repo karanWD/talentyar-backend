@@ -9,10 +9,19 @@ class Transaction extends Model
 {
     const TYPE_IN = 'in';
     const TYPE_OUT = 'out';
+    const STATUS_PENDING = 'pending';
+    const STATUS_SUCCESS = 'success';
+    const STATUS_FAIL = 'fail';
 
     const TYPE = [
       self::TYPE_IN,
       self::TYPE_OUT,
+    ];
+
+    const STATUS = [
+        self::STATUS_PENDING,
+        self::STATUS_SUCCESS,
+        self::STATUS_FAIL,
     ];
 
     const PAYMENT_WALLET = 'payment_wallet';
@@ -28,6 +37,7 @@ class Transaction extends Model
         'wallet_id',
         'payment',
         'type',
+        'status',
         'amount',
         'currency',
         'description',
@@ -58,5 +68,20 @@ class Transaction extends Model
     public function isOut(): bool
     {
         return $this->type === self::TYPE_OUT;
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function isSuccess(): bool
+    {
+        return $this->status === self::STATUS_SUCCESS;
+    }
+
+    public function isFail(): bool
+    {
+        return $this->status === self::STATUS_FAIL;
     }
 }

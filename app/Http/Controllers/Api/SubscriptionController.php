@@ -9,7 +9,9 @@ use App\Http\Resources\UserResource;
 use App\Models\Plan;
 use App\Models\Post;
 use App\Models\Subscription;
+use App\Models\Transaction;
 use App\Models\User;
+use App\Models\Wallet;
 use App\Services\BitpayPaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,26 +32,64 @@ class SubscriptionController extends BaseApiController
 
         $user = $request->user();
         if ($user->activeSubscription()->exists()) {
+            //todo:: handle exteded plan
             return $this->errorResponse('User already has an active subscription', 400);
         }
 
-        $payment = new BitpayPaymentService();
-        dd($payment->requestPayment($plan->price, 'https://api.talentyar.com/api' , 2,'sina','sina6G@gmail.com','description'));
+        $response = null;
+        $amount = (! is_null($plan->discount_price) && (float) $plan->discount_price !== 0.0)
+            ? $plan->discount_price
+            : ($plan->price ?? 0);
 
+        if($amount == 0) {
+            return $this->errorResponse('amount is 0', 400);
+        }
 
-        // todo:: add active for test
-        $subscription = $user->subscriptions()->create([
-            'plan_id' => $plan->id,
-            'status' => Subscription::STATUS_ACTIVE,
-            'price_paid' => $plan->price ?? 0,
-            'discount_price' => $plan->discount_price ?? 0,
-            'started_at' => now(),
-            'expires_at' => now()->addDays($plan->duration),
+        $wallet = Wallet::query()->firstOrCreate([
+            'entity_type' => $user->getMorphClass(),
+            'entity_id' => $user->id,
+        ], [
+            'balance' => 0,
+            'currency' => 'IRR',
         ]);
 
+        $transaction  = Transaction::query()
+            ->create([
+                'wallet_id' => $wallet->id,
+                'payment' => Transaction::PAYMENT_SUBSCRIPTION,
+                'type' => Transaction::TYPE_IN,
+                'status' => Transaction::STATUS_PENDING,
+                'amount' => $amount,
+                'currency' => $wallet->currency ?? 'IRR',
+                'description' => 'Subscription purchase for plan: ' . $plan->name,
+                'plan_id' => $plan->id,
+            ]);
+
+        $payment = new BitpayPaymentService();
+        $response = $payment->requestPayment($amount, 'https://api.talentyar.com/api' , $transaction->id,$user->phone,$user->username,'description');
+        $url = $response['gateway_url'] ?? null;
+
+        if (is_null($url)){
+            return $this->errorResponse('payment gateway down!', 400);
+        }
+
         return $this->successResponse([
-            'subscription' => new SubscriptionResource($subscription),
-        ], 'Subscription purchased successfully', 201);
+            'url' => $url,
+        ], 'go to payment gate', 200);
+
+        // todo:: add active for test
+//        $subscription = $user->subscriptions()->create([
+//            'plan_id' => $plan->id,
+//            'status' => Subscription::STATUS_ACTIVE,
+//            'price_paid' => $amount,
+//            'discount_price' => $plan->discount_price ?? 0,
+//            'started_at' => now(),
+//            'expires_at' => now()->addDays($plan->duration),
+//        ]);
+//
+//        return $this->successResponse([
+//            'subscription' => new SubscriptionResource($subscription),
+//        ], 'Subscription purchased successfully', 201);
     }
 
     public function getActiveSubscription(Request $request): JsonResponse
