@@ -127,7 +127,7 @@ class PostController extends BaseApiController
         $post = Post::create([
             'user_id' => $user->id,
             'caption' => $request->validated('caption'),
-            'state' => $request->validated('state', Post::STATE_PUBLISHED),
+            'state' => $request->validated('state', Post::STATE_DRAFT),
         ]);
 
         $videoMedia = Media::where('hash', $request->validated('video_hash'))->first();
