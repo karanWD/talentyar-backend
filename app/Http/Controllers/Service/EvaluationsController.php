@@ -113,4 +113,29 @@ class EvaluationsController extends BaseApiController
             'Evaluation analyzer status retrieved successfully'
         );
     }
+
+    public function fail(Evaluation $evaluation)
+    {
+        $evaluation->update([
+            'analyzer_status' => Evaluation::ANALYZER_STATUS_FAILED,
+        ]);
+
+        return $this->successResponse(
+            [
+                'evaluation_id' => $evaluation->id,
+                'evaluation_status' => $evaluation->status,
+                'analyzer' => [
+                    'status' => $evaluation->analyzer_status ?? Evaluation::ANALYZER_STATUS_PENDING,
+                    'attempts' => (int) $evaluation->analyzer_attempts,
+                    'configured_max_tries' => (new \App\Jobs\AnalyzeEvaluationVideo($evaluation->id))->tries,
+                    'failure_count' => (int) $evaluation->analyzer_failure_count,
+                    'success_count' => (int) $evaluation->analyzer_success_count,
+                    'last_error' => $evaluation->analyzer_last_error,
+                    'last_attempt_at' => $evaluation->analyzer_last_attempt_at?->toIso8601String(),
+                    'succeeded_at' => $evaluation->analyzer_succeeded_at?->toIso8601String(),
+                ],
+            ],
+            'Evaluation analyzer status retrieved successfully'
+        );
+    }
 }

@@ -106,5 +106,6 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::get('/evaluations/{evaluation}', [ServiceEvaluationsController::class, 'show'])->name('evaluations.show');
         Route::get('/evaluations/{evaluation}/analysis-status', [ServiceEvaluationsController::class, 'analysisStatus'])->name('evaluations.analysis-status');
         Route::post('/evaluations/{evaluation}/store', [ServiceEvaluationsController::class, 'store'])->name('evaluations.store');
+        Route::post('/evaluations/{evaluation}/fail', [ServiceEvaluationsController::class, 'fail'])->name('evaluations.fail');
     });
 });
