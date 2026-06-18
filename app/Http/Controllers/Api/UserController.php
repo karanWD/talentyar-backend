@@ -40,7 +40,7 @@ class UserController extends BaseApiController
             'followers_count' => (int) $user->followers_count,
             'following_count' => (int) $user->following_count,
             'is_following' => auth()->check() ? $user->followers()->where('follower_id', auth()->id())->exists() : false,
-            'posts_count' => (int) $user->posts_count,
+            'posts_count' => (int) ($user->posts_count ?? $user->posts()->where('state', Post::STATE_PUBLISHED)->count()),
             'avatar' => (function () use ($user) {
                 $file = $user->media()->where('collection', 'avatar')->first();
                 $fallback = $user->media()->first();
@@ -91,7 +91,7 @@ class UserController extends BaseApiController
             'followers_count' => (int) $user->followers_count,
             'following_count' => (int) $user->following_count,
             'is_following' => auth()->check() ? $user->followers()->where('follower_id', auth()->id())->exists() : false,
-            'posts_count' => (int) $user->posts_count,
+            'posts_count' => (int) ($user->posts_count ?? $user->posts()->where('state', Post::STATE_PUBLISHED)->count()),
         ], 'Profile retrieved successfully');
     }
 }
