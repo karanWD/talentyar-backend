@@ -115,7 +115,18 @@ class SubscriptionController extends BaseApiController
 
     public function callback(Request $request)
     {
-        dd($request->all());
+        $transaction = Transaction::query()
+            ->where('transaction_id', $request->get('factorId'))
+            ->first();
+        if (!$transaction) {
+            return $this->errorResponse('Transaction not found', 404);
+        }
+
+        $response = null;
+        $payment = new BitpayPaymentService();
+        $response = $payment->verifyPayment($request->get('trans_id'), $request->get('id_get'));
+
+        dd($response);
     }
 
 
