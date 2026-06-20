@@ -56,6 +56,7 @@ class SubscriptionController extends BaseApiController
         $transaction  = Transaction::query()
             ->create([
                 'wallet_id' => $wallet->id,
+                'user_id' => $user->id,
                 'payment' => Transaction::PAYMENT_SUBSCRIPTION,
                 'type' => Transaction::TYPE_IN,
                 'status' => Transaction::STATUS_PENDING,
@@ -70,11 +71,10 @@ class SubscriptionController extends BaseApiController
         $url = $response['gateway_url'] ?? null;
 
         $transaction->update([
-           'metadata' => json_encode([
+           'meta_data' => [
                'id_get' => $response['id_get'] ?? null,
                'raw' => $response['raw'] ?? null,
-
-           ])
+           ],
         ]);
 
 
@@ -116,6 +116,7 @@ class SubscriptionController extends BaseApiController
     public function callback(Request $request)
     {
         $transaction = Transaction::query()
+            ->with(['plan', 'user'])
             ->where('id', $request->get('factorId'))
             ->first();
         if (!$transaction) {
@@ -126,7 +127,39 @@ class SubscriptionController extends BaseApiController
         $payment = new BitpayPaymentService();
         $response = $payment->verifyPayment($request->get('trans_id'), $request->get('id_get'));
 
-        dd($response);
+        if (is_null($response)){
+            return $this->errorResponse('payment gateway down!', 400);
+        }
+
+        $transaction->update([
+            'meta_data' => array_merge($transaction->meta_data ?? [], [
+                'verify_response' => $response,
+            ]),
+        ]);
+
+        if ($response['verified'] == true){
+
+            $user = $transaction->user;
+            $plan = $transaction->plan;
+
+            if (!$user || !$plan) {
+                return $this->errorResponse('Transaction data is incomplete', 400);
+            }
+
+            $subscription = $user->subscriptions()->create([
+                    'plan_id' => $plan->id,
+                    'status' => Subscription::STATUS_ACTIVE,
+                    'price_paid' => $transaction->amount,
+                    'discount_price' => $plan->discount_price ?? 0,
+                    'started_at' => now(),
+                    'expires_at' => now()->addDays($plan->duration),
+                ]);
+
+            return $this->successResponse('pay successfully', 200);
+        }else {
+            return $this->successResponse('not pay', 200);
+        }
+
     }
 
 

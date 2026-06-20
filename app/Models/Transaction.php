@@ -35,6 +35,7 @@ class Transaction extends Model
 
     protected $fillable = [
         'wallet_id',
+        'user_id',
         'payment',
         'type',
         'status',
@@ -46,9 +47,18 @@ class Transaction extends Model
         'meta_data',
     ];
 
+    protected $casts = [
+        'meta_data' => 'array',
+    ];
+
     public function wallet(): BelongsTo
     {
         return $this->belongsTo(Wallet::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function subscription(): BelongsTo
