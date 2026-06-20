@@ -116,7 +116,7 @@ class SubscriptionController extends BaseApiController
     public function callback(Request $request)
     {
         $transaction = Transaction::query()
-            ->where('transaction_id', $request->get('factorId'))
+            ->where('id', $request->get('factorId'))
             ->first();
         if (!$transaction) {
             return $this->errorResponse('Transaction not found', 404);
