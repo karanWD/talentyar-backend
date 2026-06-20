@@ -43,6 +43,7 @@ class Transaction extends Model
         'description',
         'subscription_id',
         'plan_id',
+        'meta_data',
     ];
 
     public function wallet(): BelongsTo

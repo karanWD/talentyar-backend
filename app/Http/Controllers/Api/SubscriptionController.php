@@ -66,8 +66,17 @@ class SubscriptionController extends BaseApiController
             ]);
 
         $payment = new BitpayPaymentService();
-        $response = $payment->requestPayment($amount, 'https://api.talentyar.com/api' , $transaction->id,$user->phone,$user->username,'description');
+        $response = $payment->requestPayment($amount, 'https://api.talentyar.com/api/v1/callback' , $transaction->id,$user->phone,$user->username,'description');
         $url = $response['gateway_url'] ?? null;
+
+        $transaction->update([
+           'metadata' => json_encode([
+               'id_get' => $response['id_get'] ?? null,
+               'raw' => $response['raw'] ?? null,
+
+           ])
+        ]);
+
 
         if (is_null($url)){
             return $this->errorResponse('payment gateway down!', 400);
@@ -102,6 +111,11 @@ class SubscriptionController extends BaseApiController
         return $this->successResponse([
             'subscription' => new SubscriptionResource($subscription),
         ], 'Active subscription retrieved successfully');
+    }
+
+    public function callback(Request $request)
+    {
+        dd($request->all());
     }
 
 

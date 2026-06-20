@@ -108,4 +108,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::post('/evaluations/{evaluation}/store', [ServiceEvaluationsController::class, 'store'])->name('evaluations.store');
         Route::post('/evaluations/{evaluation}/fail', [ServiceEvaluationsController::class, 'fail'])->name('evaluations.fail');
     });
+
+    Route::post('/callback', [SubscriptionController::class, 'callback'])->name('callback');
+
 });
