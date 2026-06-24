@@ -65,6 +65,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/follow/{user}', [FollowController::class, 'follow'])->name('follow');
             Route::delete('/follow/{user}', [FollowController::class, 'unfollow'])->name('unfollow');
 
+            Route::get('/leaderboard', [UserController::class, 'leaderboard'])->name('users.leaderboard');
             Route::post('/media', [MediaController::class, 'upload'])->name('media.upload');
             Route::get('/posts', [PostController::class, 'myPosts'])->name('posts.index');
             Route::get('/{username}/posts', [PostController::class, 'userPosts'])->name('userPosts.index');

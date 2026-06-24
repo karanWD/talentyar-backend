@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Resources\MinimalMediaResource;
 use App\Http\Resources\PostResource;
+use App\Http\Resources\LeaderboardUserResource;
 use App\Http\Resources\UserResource;
+use App\Models\Evaluation;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -53,6 +55,39 @@ class UserController extends BaseApiController
         return $this->successResponse(
             ['users' => $data],
             'Users retrieved successfully'
+        );
+    }
+
+    /**
+     * Get users ranked by their approved evaluation score.
+     */
+    public function leaderboard(Request $request): JsonResponse
+    {
+        $perPage = max(1, min(100, $request->integer('per_page', 15)));
+
+        $users = User::query()
+            ->with('media')
+            ->withCount([
+                'evaluations as approved_evaluations_count' => fn ($query) => $query
+                    ->where('status', Evaluation::status_approved),
+            ])
+            ->withAvg([
+                'evaluations as leaderboard_score' => fn ($query) => $query
+                    ->where('status', Evaluation::status_approved),
+            ], 'score')
+            ->whereHas('evaluations', fn ($query) => $query->where('status', Evaluation::status_approved))
+            ->orderByDesc('leaderboard_score')
+            ->orderByDesc('approved_evaluations_count')
+            ->orderBy('users.id')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        return $this->successResponse(
+            array_merge(
+                ['users' => LeaderboardUserResource::collection($users)->resolve()],
+                $this->paginationMeta($users)
+            ),
+            'Leaderboard retrieved successfully'
         );
     }
 
