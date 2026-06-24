@@ -22,7 +22,14 @@ class PlanResource extends BaseResource
             'type_label' => Plan::TYPE[$this->type] ?? $this->type,
             'status' => $this->status,
             'description' => $this->description,
-            'features' => $this->features,
+            'features' => collect($this->features ?? [])
+                ->map(fn (array $feature) => [
+                    'title' => $feature['title'] ?? null,
+                    'type' => $feature['type'] ?? 'normal',
+                    'is_special' => ($feature['type'] ?? 'normal') === 'special',
+                ])
+                ->values()
+                ->all(),
             ...$this->includeTimestamps(),
         ];
     }
