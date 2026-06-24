@@ -25,7 +25,7 @@ class BitpayPaymentService
             ->asForm()
             ->post($this->config('gateway_send_url'), [
                 'api' => $this->apiKey(),
-                'amount' => $amount,
+                'amount' => $amount * 10,
                 'redirect' => $redirect,
                 'factorId' => $factorId,
                 'name' => $name,
