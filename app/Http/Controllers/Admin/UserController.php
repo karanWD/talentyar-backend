@@ -7,9 +7,12 @@ use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Http\Resources\PostResource;
 use App\Http\Resources\UserResource;
+use App\Models\Evaluation;
+use App\Models\Post;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends BaseApiController
 {
@@ -101,6 +104,50 @@ class UserController extends BaseApiController
             'User Details retrieved successfully'
         );
 
+    }
+
+    public function destroy(Request $request, User $user): JsonResponse
+    {
+        if ($error = $this->authorizeOrFail($request, 'delete-users')) {
+            return $error;
+        }
+
+        DB::transaction(function () use ($user): void {
+            $this->deleteUserRelations($user);
+            $user->delete();
+        });
+
+        return $this->successResponse(
+            null,
+            'User deleted successfully'
+        );
+    }
+
+    private function deleteUserRelations(User $user): void
+    {
+        $user->tokens()->delete();
+        $user->media()->delete();
+
+        $user->posts()
+            ->with('media')
+            ->chunkById(100, function ($posts): void {
+                /** @var Post $post */
+                foreach ($posts as $post) {
+                    $post->media()->delete();
+                    $post->delete();
+                }
+            });
+
+        $user->evaluations()
+            ->with(['items', 'media'])
+            ->chunkById(100, function ($evaluations): void {
+                /** @var Evaluation $evaluation */
+                foreach ($evaluations as $evaluation) {
+                    $evaluation->items()->delete();
+                    $evaluation->media()->delete();
+                    $evaluation->delete();
+                }
+            });
     }
 
 

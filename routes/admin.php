@@ -34,6 +34,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/users', [UserController::class, 'store'])->name('users.store');
             Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
             Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+            Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
 
             Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
