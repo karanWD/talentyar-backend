@@ -15,6 +15,7 @@ use App\Models\Wallet;
 use App\Services\BitpayPaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 
 class SubscriptionController extends BaseApiController
 {
@@ -120,7 +121,18 @@ class SubscriptionController extends BaseApiController
             ->where('id', $request->get('factorId'))
             ->first();
         if (!$transaction) {
-            return $this->errorResponse('Transaction not found', 404);
+            return $this->paymentResultRedirect('failed');
+        }
+
+        if($transaction->status != Transaction::STATUS_PENDING){
+            return $this->paymentResultRedirect('failed');
+        }
+
+        $user = $transaction->user;
+        $plan = $transaction->plan;
+
+        if (!$user || !$plan) {
+            return $this->paymentResultRedirect('failed');
         }
 
         $response = null;
@@ -128,7 +140,7 @@ class SubscriptionController extends BaseApiController
         $response = $payment->verifyPayment($request->get('trans_id'), $request->get('id_get'));
 
         if (is_null($response)){
-            return $this->errorResponse('payment gateway down!', 400);
+            return $this->paymentResultRedirect('failed');
         }
 
         $transaction->update([
@@ -139,13 +151,6 @@ class SubscriptionController extends BaseApiController
 
         if ($response['verified'] == true){
 
-            $user = $transaction->user;
-            $plan = $transaction->plan;
-
-            if (!$user || !$plan) {
-                return $this->errorResponse('Transaction data is incomplete', 400);
-            }
-
             $subscription = $user->subscriptions()->create([
                     'plan_id' => $plan->id,
                     'status' => Subscription::STATUS_ACTIVE,
@@ -155,11 +160,25 @@ class SubscriptionController extends BaseApiController
                     'expires_at' => now()->addDays($plan->duration),
                 ]);
 
-            return $this->successResponse('pay successfully', 200);
+            $transaction->update([
+                'status' => Transaction::STATUS_SUCCESS,
+                'subscription_id' => $subscription->id,
+            ]);
+
+            return $this->paymentResultRedirect('success');
         }else {
-            return $this->successResponse('not pay', 200);
+            $transaction->update([
+                'status' => Transaction::STATUS_FAIL,
+            ]);
+
+            return $this->paymentResultRedirect('failed');
         }
 
+    }
+
+    private function paymentResultRedirect(string $status): RedirectResponse
+    {
+        return redirect()->away('https://talentyar.com/payment/result?status=' . urlencode($status));
     }
 
 
