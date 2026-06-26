@@ -134,8 +134,8 @@ class AuthController extends BaseApiController
             ->first();
 
         if($talentYarUser) {
-            if (!$talentYarUser->following()->where('following_id', $user->id)->exists()) {
-                $talentYarUser->following()->attach($user->id);
+            if (!$user->following()->where('following_id', $talentYarUser->id)->exists()) {
+                $user->following()->attach($talentYarUser->id);
             }
         }
 

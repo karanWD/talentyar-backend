@@ -79,14 +79,14 @@ class PostController extends BaseApiController
             ->paginate($request->integer('per_page', 15))
             ->withQueryString();
 
-        if($posts->count() == 0){
-            $posts = Post::query()
-                ->where('state', Post::STATE_PUBLISHED)
-                ->with(['media', 'user', 'postLikes' => fn ($q) => $q->where('user_id', Auth::user()->id)])
-                ->inRandomOrder()
-                ->paginate($request->integer('per_page', 15))
-                ->withQueryString();
-        }
+//        if($posts->count() == 0){
+//            $posts = Post::query()
+//                ->where('state', Post::STATE_PUBLISHED)
+//                ->with(['media', 'user', 'postLikes' => fn ($q) => $q->where('user_id', Auth::user()->id)])
+//                ->inRandomOrder()
+//                ->paginate($request->integer('per_page', 15))
+//                ->withQueryString();
+//        }
 
         return $this->successResponse(
             ['posts' => PostResource::collection($posts)],
