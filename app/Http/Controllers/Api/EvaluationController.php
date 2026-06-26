@@ -122,7 +122,7 @@ class EvaluationController extends BaseApiController
 
         $post = Post::create([
             'user_id' => $user->id,
-            'caption' => 'Evaluation',
+            'caption' => ' ',
             'state' => Post::STATE_DRAFT,
         ]);
 
