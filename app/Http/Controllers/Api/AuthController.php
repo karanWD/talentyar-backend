@@ -6,6 +6,7 @@ use App\Http\Requests\CheckUsernameRequest;
 use App\Http\Requests\UpdateProfileAvatarRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Resources\PostResource;
+use App\Http\Resources\UserFollowResource;
 use App\Http\Resources\UserResource;
 use App\Models\Media;
 use App\Models\User;
@@ -127,6 +128,16 @@ class AuthController extends BaseApiController
             abilities: ['*'],
             expiresAt: now()->addDays(30)
         )->plainTextToken;
+
+        $talentYarUser = User::query()
+            ->where('username','talentyar')
+            ->first();
+
+        if($talentYarUser) {
+            if (!$talentYarUser->following()->where('following_id', $user->id)->exists()) {
+                $talentYarUser->following()->attach($user->id);
+            }
+        }
 
         return $this->successResponse(
             [
