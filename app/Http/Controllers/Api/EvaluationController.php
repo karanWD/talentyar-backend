@@ -8,6 +8,7 @@ use App\Http\Resources\EvaluationResource;
 use App\Http\Resources\MediaResource;
 use App\Models\Evaluation;
 use App\Models\Media;
+use App\Models\Post;
 use App\Services\MediaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -110,20 +111,36 @@ class EvaluationController extends BaseApiController
 
         $user = $request->user();
 
-        $post = Evaluation::create([
+        $evaluation = Evaluation::create([
             'user_id' => $user->id,
             'analyzer_status' => Evaluation::ANALYZER_STATUS_PENDING,
         ]);
 
         $videoMedia = Media::where('hash', $validated['video_hash'])->firstOrFail();
-        $post->assignMedia($videoMedia, 'video');
+        $evaluation->assignMedia($videoMedia, 'video');
 
-        AnalyzeEvaluationVideo::dispatch($post->id)->afterCommit();
 
-        $post->load('media');
+        $post = Post::create([
+            'user_id' => $user->id,
+            'caption' => 'Evaluation',
+            'state' => Post::STATE_DRAFT,
+        ]);
+
+        $postMedia = $videoMedia->replicate([
+            'entity_id',
+            'entity_type',
+        ]);
+
+        $postMedia->entity_id = $post->id;
+        $postMedia->entity_type = get_class($post);
+        $postMedia->save();
+
+        AnalyzeEvaluationVideo::dispatch($evaluation->id)->afterCommit();
+
+        $evaluation->load('media');
 
         return $this->successResponse(
-            ['post' => new EvaluationResource($post)],
+            ['post' => new EvaluationResource($evaluation)],
             'Evaluation created successfully',
             201
         );
