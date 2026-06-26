@@ -40,7 +40,11 @@ class MediaService
             Storage::disk($disk)->put(
                 $hashedPath,
                 fopen($file->getRealPath(), 'rb'),
-                'public'
+                [
+                    'visibility' => 'public',
+                    'ContentType' => $mime,
+                    'ContentDisposition' => 'inline',
+                ]
             );
         }
 
@@ -124,4 +128,3 @@ class MediaService
         ]);
     }
 }
-
