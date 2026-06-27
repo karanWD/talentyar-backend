@@ -53,15 +53,15 @@ class EvaluationsController extends BaseApiController
     public function store(Request $request, Evaluation $evaluation): JsonResponse
     {
         $validated = $request->validate([
-            'pros_comment' => ['required', 'string'],
-            'cons_comment' => ['required', 'string'],
-            'suggestion' => ['required', 'string'],
-            'summary' => ['required', 'string'],
+            'pros_comment' => ['nullable', 'string'],
+            'cons_comment' => ['nullable', 'string'],
+            'suggestion' => ['nullable', 'string'],
+            'summary' => ['nullable', 'string'],
             'score' => ['nullable', 'numeric', 'min:0'],
             'status' => ['nullable', Rule::in(Evaluation::STATUSES)],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.item_id' => ['required', 'integer', 'distinct', 'exists:items,id'],
-            'items.*.score' => ['required', 'integer', 'min:0'],
+            'items' => ['nullable', 'array', 'min:1'],
+            'items.*.item_id' => ['nullable', 'integer', 'distinct', 'exists:items,id'],
+            'items.*.score' => ['nullable', 'integer', 'min:0'],
         ]);
 
         DB::transaction(function () use ($evaluation, $validated) {
