@@ -117,7 +117,7 @@ class EvaluationsController extends BaseApiController
     public function fail(Evaluation $evaluation)
     {
         $evaluation->update([
-            'analyzer_status' => Evaluation::ANALYZER_STATUS_FAILED,
+            'analyzer_status' => Evaluation::ANALYZER_STATUS_AI_FAILED,
         ]);
 
         return $this->successResponse(
