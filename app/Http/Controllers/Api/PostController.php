@@ -102,8 +102,9 @@ class PostController extends BaseApiController
             ->where('state', Post::STATE_PUBLISHED)
             ->withCount(['likes', 'dislikes', 'postViews'])
             ->with(['media', 'user', 'postLikes' => fn ($q) => $q->where('user_id', Auth::user()->id)])
-            ->orderByDesc('post_views_count')
-            ->inRandomOrder()
+            ->orderByDesc('created_at')
+//            ->orderByDesc('post_views_count')
+//            ->inRandomOrder()
             ->paginate($request->integer('per_page', 15))
             ->withQueryString();
 
