@@ -15,6 +15,7 @@ class LeaderboardUserResource extends BaseResource
 
         return [
             'id' => $this->id,
+            'rank' => isset($this->rank) ? (int) $this->rank : null,
             'is_me' => $authUser ? $authUser->id === $this->id : false,
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,

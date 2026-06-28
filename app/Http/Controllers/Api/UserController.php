@@ -82,6 +82,16 @@ class UserController extends BaseApiController
             ->paginate($perPage)
             ->withQueryString();
 
+        $startRank = (($users->currentPage() - 1) * $users->perPage()) + 1;
+
+        $users->setCollection(
+            $users->getCollection()->values()->map(function (User $user, int $index) use ($startRank) {
+                $user->rank = $startRank + $index;
+
+                return $user;
+            })
+        );
+
         return $this->successResponse(
             array_merge(
                 ['users' => LeaderboardUserResource::collection($users)->resolve()],
