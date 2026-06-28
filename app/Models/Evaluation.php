@@ -50,6 +50,7 @@ class Evaluation extends Model
     const ANALYZER_STATUS_SUCCEEDED = 'succeeded';
     const ANALYZER_STATUS_FAILED = 'failed';
     const ANALYZER_STATUS_SKIPPED = 'skipped';
+    const ANALYZER_STATUS_AI_FAILED = 'ai_failed';
 
     const ANALYZER_STATUSES = [
         self::ANALYZER_STATUS_PENDING,
@@ -57,6 +58,7 @@ class Evaluation extends Model
         self::ANALYZER_STATUS_RETRYING,
         self::ANALYZER_STATUS_SUCCEEDED,
         self::ANALYZER_STATUS_FAILED,
+        self::ANALYZER_STATUS_AI_FAILED,
         self::ANALYZER_STATUS_SKIPPED,
     ];
 

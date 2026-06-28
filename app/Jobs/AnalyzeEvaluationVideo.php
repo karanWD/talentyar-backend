@@ -93,6 +93,12 @@ class AnalyzeEvaluationVideo implements ShouldQueue
                 'evaluation_id' => $evaluation->id,
                 'status' => $response->status(),
             ]);
+
+            Log::info('Evaluation Ai Response', [
+                'evaluation_id' => $evaluation->id,
+                'status' => $response->body(),
+            ]);
+
         } catch (Throwable $exception) {
             $evaluation->increment('analyzer_failure_count');
             $evaluation->update([
