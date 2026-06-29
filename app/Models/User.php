@@ -3,12 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -27,6 +27,8 @@ class User extends Authenticatable
         'last_name',
         'phone',
         'email',
+        'referral_code',
+        'referred_by_user_id',
         'username',
         'province_id',
         'city_id',
@@ -113,6 +115,16 @@ class User extends Authenticatable
         return $this->hasMany(Evaluation::class);
     }
 
+    public function referredBy(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'referred_by_user_id');
+    }
+
+    public function referrals(): HasMany
+    {
+        return $this->hasMany(self::class, 'referred_by_user_id');
+    }
+
     /**
      * Users that this user follows.
      */
@@ -148,5 +160,35 @@ class User extends Authenticatable
             ->where('status', Subscription::STATUS_ACTIVE)
             ->where('expires_at', '>', now())
             ->latestOfMany();
+    }
+
+    public function ensureReferralCode(): void
+    {
+        if ($this->referral_code) {
+            return;
+        }
+
+        do {
+            $letters = 'abcdefghijklmnopqrstuvwxyz';
+            $numbers = '0123456789';
+            $pool = $letters . $numbers;
+
+            $characters = [
+                $letters[random_int(0, strlen($letters) - 1)],
+                $numbers[random_int(0, strlen($numbers) - 1)],
+            ];
+
+            while (count($characters) < 8) {
+                $characters[] = $pool[random_int(0, strlen($pool) - 1)];
+            }
+
+            shuffle($characters);
+
+            $referralCode = implode('', $characters);
+        } while (self::query()->where('referral_code', $referralCode)->exists());
+
+        $this->forceFill([
+            'referral_code' => $referralCode,
+        ])->save();
     }
 }

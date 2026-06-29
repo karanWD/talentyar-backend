@@ -110,11 +110,10 @@ class AuthController extends BaseApiController
 
         // Find or create user
         $user = User::firstOrCreate(
-            ['phone' => $phone],
-            [
-                'full_name' => '',
-            ]
+            ['phone' => $phone]
         );
+
+        $user->ensureReferralCode();
 
 
         // Revoke all existing tokens (optional - for single device login)
@@ -180,6 +179,68 @@ class AuthController extends BaseApiController
         return $this->successResponse(
             ['user' => new UserResource($request->user()->load('media'))],
             'User retrieved successfully'
+        );
+    }
+
+    /**
+     * Get authenticated user's referral code.
+     */
+    public function getReferralCode(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $user->ensureReferralCode();
+        $user->loadCount('referrals');
+
+        return $this->successResponse(
+            [
+                'referral_code' => $user->referral_code,
+                'referrals_count' => (int) $user->referrals_count,
+            ],
+            'Referral code retrieved successfully'
+        );
+    }
+
+    /**
+     * Apply another user's referral code for the authenticated user.
+     */
+    public function useReferralCode(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'referral_code' => ['required', 'string', 'size:8'],
+        ]);
+
+        $user = $request->user();
+
+        if ($user->referred_by_user_id) {
+            return $this->errorResponse('Referral code has already been used for this user', 422);
+        }
+
+        $referralCode = strtolower($validated['referral_code']);
+        $referrer = User::query()
+            ->where('referral_code', $referralCode)
+            ->first();
+
+        if (! $referrer) {
+            return $this->errorResponse('Referral code is invalid', 422);
+        }
+
+        if ($referrer->id === $user->id) {
+            return $this->errorResponse('You cannot use your own referral code', 422);
+        }
+
+        $user->forceFill([
+            'referred_by_user_id' => $referrer->id,
+        ])->save();
+
+        $referrer->loadCount('referrals');
+
+        return $this->successResponse(
+            [
+                'referral_code' => $referrer->referral_code,
+                'referred_by_user_id' => $referrer->id,
+                'referrals_count' => (int) $referrer->referrals_count,
+            ],
+            'Referral code applied successfully'
         );
     }
 

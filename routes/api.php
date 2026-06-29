@@ -48,6 +48,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
                 Route::post('/refresh', [AuthController::class, 'refresh'])->name('refresh');
             });
             Route::get('/profile', [AuthController::class, 'getProfile'])->name('get.profile');
+            Route::get('/referral-code', [AuthController::class, 'getReferralCode'])->name('get.referral-code');
+            Route::post('/referral-code/use', [AuthController::class, 'useReferralCode'])->name('use.referral-code');
             Route::post('/profile', [AuthController::class, 'updateProfile'])->name('update.profile');
             Route::post('/profile/avatar', [AuthController::class, 'updateProfileAvatar'])->name('update.profile.avatar');
 

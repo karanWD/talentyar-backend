@@ -23,6 +23,9 @@ class UserResource extends BaseResource
             'full_name' => trim("{$this->first_name} {$this->last_name}") ?: null,
             'phone' => $this->phone,
             'email' => $this->email,
+            'referral_code' => $this->referral_code,
+            'referrals_count' => (int) ($this->referrals_count ?? $this->referrals()->count()),
+            'referred_by_user_id' => $this->referred_by_user_id,
             'username' => $this->username,
             'province_id' => $this->province_id,
             'city_id' => $this->city_id,
@@ -54,4 +57,3 @@ class UserResource extends BaseResource
         ];
     }
 }
-
