@@ -33,6 +33,9 @@ class EvaluationsController extends BaseApiController
         }
 
         $query = Evaluation::query()
+            ->when($request->has('status'),function ($q) use ($request){
+                $q->where('status',$request->get('status'));
+            })
             ->with(['user', 'media', 'items.item']);
 
 
