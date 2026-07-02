@@ -37,7 +37,9 @@ class UserController extends BaseApiController
             ->latest()
             ->when($request->has('subscription_type'),function ($q) use ($request){
                 $q->whereHas('activeSubscription',function ($q) use ($request){
-                    $q->where('type',$request->get('subscription_type'));
+                    $q->whereHas('plan',function ($q) use ($request){
+                        $q->where('type',$request->get('subscription_type'));
+                    });
                 });
             })
             ->paginate($request->integer('per_page', 15));
