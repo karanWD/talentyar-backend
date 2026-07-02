@@ -35,6 +35,11 @@ class UserController extends BaseApiController
 
         $users = User::query()
             ->latest()
+            ->when($request->has('subscription_type'),function ($q) use ($request){
+                $q->whereHas('activeSubscription',function ($q) use ($request){
+                    $q->where('type',$request->get('subscription_type'));
+                });
+            })
             ->paginate($request->integer('per_page', 15));
 
         return $this->successResponse(
