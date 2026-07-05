@@ -20,6 +20,7 @@ class EvaluationResource extends BaseResource
             'suggestion' => $this->suggestion,
             'summary' => $this->summary,
             'status' => $this->status,
+            'user' => new UserResource($this->user),
             'media' => $this->whenLoaded('media', fn () => MediaResource::collection($this->media)),
             'jalali_date' => $this->created_at
                 ? Jalalian::fromCarbon($this->created_at)->format('Y/m/d')
