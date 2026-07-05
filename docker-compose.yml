@@ -24,6 +24,37 @@ services:
       - "./Docker/php/custom.ini:/usr/local/etc/php/conf.d/custom.ini"
     networks:
       - talentyar_network
+
+  queue:
+      hostname: talentyar_queue
+      build: ./Docker/php
+      container_name: talentyar_queue
+      restart: unless-stopped
+      working_dir: /var/www/talentyar
+      command: php artisan queue:work --tries=3 --timeout=120 --sleep=3
+      volumes:
+          - "./:/var/www/talentyar"
+          - "./Docker/php/custom.ini:/usr/local/etc/php/conf.d/custom.ini"
+      networks:
+          - talentyar_network
+      depends_on:
+          - php
+
+  scheduler:
+      hostname: talentyar_scheduler
+      build: ./Docker/php
+      container_name: talentyar_scheduler
+      restart: unless-stopped
+      working_dir: /var/www/talentyar
+      command: sh -c "while true; do php artisan schedule:run --no-interaction --verbose; sleep 60; done"
+      volumes:
+          - "./:/var/www/talentyar"
+          - "./Docker/php/custom.ini:/usr/local/etc/php/conf.d/custom.ini"
+      networks:
+          - talentyar_network
+      depends_on:
+          - php
+
   nginx :
     hostname : talentyar_nginx
     build : ./Docker/nginx
