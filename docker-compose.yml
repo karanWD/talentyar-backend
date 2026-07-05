@@ -1,7 +1,7 @@
 services:
   mysql:
     hostname: talentyar_mysql
-    image : mysql:8
+    image : mariadb:10.11
     container_name : talentyar_mysql
     restart: unless-stopped
     env_file: ./Docker/mysql/.env
