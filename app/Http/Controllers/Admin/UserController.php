@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Api\BaseApiController;
+use App\Http\Resources\AdminReferralCodeResource;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Http\Resources\PostResource;
@@ -55,6 +56,39 @@ class UserController extends BaseApiController
                 $this->paginationMeta($users)
             ),
             'Users retrieved successfully'
+        );
+    }
+
+    public function referralCodes(Request $request): JsonResponse
+    {
+        if ($error = $this->authorizeOrFail($request, 'read-users')) {
+            return $error;
+        }
+
+        $referralCodes = User::query()
+            ->whereNotNull('referral_code')
+            ->withCount('referrals')
+            ->when($request->filled('search'), function ($query) use ($request): void {
+                $search = $request->string('search')->toString();
+
+                $query->where(function ($nested) use ($search): void {
+                    $nested->where('referral_code', 'like', '%' . $search . '%')
+                        ->orWhere('first_name', 'like', '%' . $search . '%')
+                        ->orWhere('last_name', 'like', '%' . $search . '%')
+                        ->orWhere('username', 'like', '%' . $search . '%')
+                        ->orWhere('phone', 'like', '%' . $search . '%');
+                });
+            })
+            ->latest()
+            ->paginate($request->integer('per_page', 15))
+            ->withQueryString();
+
+        return $this->successResponse(
+            array_merge(
+                ['referral_codes' => AdminReferralCodeResource::collection($referralCodes)->resolve()],
+                $this->paginationMeta($referralCodes)
+            ),
+            'Referral codes retrieved successfully'
         );
     }
 

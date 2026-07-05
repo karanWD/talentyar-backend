@@ -7,8 +7,8 @@ RUN apt-get -y update && apt-get -y install libssl-dev libcurl4-openssl-dev wget
                                             libssh-dev git supervisor cron zlib1g-dev libjpeg62-turbo-dev libpng-dev \
                                             libxpm-dev libfreetype6-dev iputils-ping redis-server
 
-RUN pecl install redis \
-    && docker-php-ext-enable redis
+#RUN pecl install redis \
+#    && docker-php-ext-enable redis
 
 RUN apt-get update -yqq \
     && apt-get install -y --no-install-recommends openssl \

@@ -31,6 +31,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
 
             Route::get('/users', [UserController::class, 'index'])->name('users.index');
+            Route::get('/users/referral-codes', [UserController::class, 'referralCodes'])->name('users.referral-codes');
             Route::post('/users', [UserController::class, 'store'])->name('users.store');
             Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
             Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
