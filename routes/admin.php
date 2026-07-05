@@ -45,6 +45,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('/evaluations', [EvaluationsController::class, 'index'])->name('evaluations.index');
             Route::get('/evaluations/{evaluation}', [EvaluationsController::class, 'show'])->name('evaluations.show');
             Route::post('/evaluations/{evaluation}/store', [EvaluationsController::class, 'store'])->name('evaluations.store');
+            Route::post('/evaluations/{evaluation}/retry', [EvaluationsController::class, 'retry'])->name('evaluations.retry');
 
             Route::get('/items', [ItemController::class, 'index'])->name('items.index');
         });

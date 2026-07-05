@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Resources\EvaluationResource;
+use App\Jobs\AnalyzeEvaluationVideo;
 use App\Models\Evaluation;
 use App\Models\EvaluationItem;
 use Illuminate\Http\JsonResponse;
@@ -123,5 +124,20 @@ class EvaluationsController extends BaseApiController
             ['evaluation' => new EvaluationResource($evaluation)],
             'Evaluation stored successfully'
         );
+    }
+
+    public function retry(Request $request, Evaluation $evaluation)
+    {
+        if ($error = $this->authorizeOrFail($request, 'update-evaluation')) {
+            return $error;
+        }
+
+        AnalyzeEvaluationVideo::dispatch($evaluation->id)->afterCommit();
+
+        return $this->successResponse(
+            ['evaluation' => new EvaluationResource($evaluation)],
+            'Evaluation JObed successfully'
+        );
+
     }
 }
