@@ -12,6 +12,7 @@ class AdminReferralCodeResource extends BaseResource
     protected function getResourceData(Request $request): array
     {
         return [
+            'id' => $this->id,
             'referral_code' => $this->referral_code,
             'used_count' => (int) ($this->referrals_count ?? 0),
             'owner' => [
