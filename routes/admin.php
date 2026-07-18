@@ -29,7 +29,6 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::put('/roles/{role}', [AdminRoleController::class, 'update'])->name('roles.update');
             Route::delete('/roles/{role}', [AdminRoleController::class, 'destroy'])->name('roles.destroy');
 
-
             Route::get('/users', [UserController::class, 'index'])->name('users.index');
             Route::get('/users/referral-codes', [UserController::class, 'referralCodes'])->name('users.referral-codes');
             Route::post('/users', [UserController::class, 'store'])->name('users.store');
@@ -37,11 +36,10 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
             Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
-
             Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
             Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
             Route::post('/posts/{post}/state', [PostController::class, 'updateState'])->name('posts.state');
-
+            Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
 
             Route::get('/evaluations', [EvaluationsController::class, 'index'])->name('evaluations.index');
             Route::get('/evaluations/{evaluation}', [EvaluationsController::class, 'show'])->name('evaluations.show');
@@ -53,12 +51,11 @@ Route::prefix('v1')->name('v1.')->group(function () {
     });
 });
 
-
-//Route::middleware('admin.auth')->prefix('admin')->name('admin.')->group(function () {
+// Route::middleware('admin.auth')->prefix('admin')->name('admin.')->group(function () {
 //    Route::get('/profile', [AdminAuthController::class, 'show'])->name('profile');
 //    Route::post('/profile', [AdminAuthController::class, 'update'])->name('profile.update');
-//});
+// });
 //
-//Route::get('admin/login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
-//Route::post('admin/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
-//Route::post('admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+// Route::get('admin/login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
+// Route::post('admin/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
+// Route::post('admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');

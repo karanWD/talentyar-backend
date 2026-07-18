@@ -36,6 +36,7 @@ class PermissionSeeder extends Seeder
             // پست‌ها
             'read-posts',
             'update-posts',
+            'delete-posts',
 
             'read-evaluation',
             'update-evaluation',

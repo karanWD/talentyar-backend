@@ -4,9 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Resources\PostResource;
+use App\Models\Media;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class PostController extends BaseApiController
 {
@@ -43,7 +47,7 @@ class PostController extends BaseApiController
 
         if ($request->filled('search')) {
             $search = $request->string('search')->toString();
-            $query->where('caption', 'like', '%' . $search . '%');
+            $query->where('caption', 'like', '%'.$search.'%');
         }
 
         $posts = $query
@@ -88,7 +92,7 @@ class PostController extends BaseApiController
         }
 
         $validated = $request->validate([
-            'state' => ['required', 'integer', 'in:' . implode(',', Post::STATES)],
+            'state' => ['required', 'integer', 'in:'.implode(',', Post::STATES)],
         ]);
 
         $post->update(['state' => $validated['state']]);
@@ -98,6 +102,46 @@ class PostController extends BaseApiController
         return $this->successResponse(
             ['post' => new PostResource($post)],
             'Post state updated successfully'
+        );
+    }
+
+    /**
+     * Delete a post and all of its attached files.
+     */
+    public function destroy(Request $request, Post $post): JsonResponse
+    {
+        if ($error = $this->authorizeOrFail($request, 'delete-posts')) {
+            return $error;
+        }
+
+        $post->load('media');
+
+        DB::transaction(function () use ($post): void {
+            /** @var Media $media */
+            foreach ($post->media as $media) {
+                $isUsedElsewhere = Media::query()
+                    ->whereKeyNot($media->getKey())
+                    ->where('disk', $media->disk)
+                    ->where('path', $media->path)
+                    ->exists();
+
+                if (! $isUsedElsewhere) {
+                    $disk = $media->disk ?: 's3';
+
+                    if (! Storage::disk($disk)->delete($media->path)) {
+                        throw new RuntimeException("Unable to delete post media from disk [{$disk}].");
+                    }
+                }
+
+                $media->forceDelete();
+            }
+
+            $post->delete();
+        });
+
+        return $this->successResponse(
+            null,
+            'Post deleted successfully'
         );
     }
 }
