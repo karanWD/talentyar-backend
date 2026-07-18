@@ -44,7 +44,7 @@ class UserResource extends BaseResource
             'bio' => $this->bio,
             'followers_count' => (int) ($this->followers_count ?? $this->followers()->count()),
             'following_count' => (int) ($this->following_count ?? $this->following()->count()),
-            'post_count' => (int) ($this->posts_count ?? $this->posts()->where('state', Post::STATE_PUBLISHED)->count()),
+            'post_count' => (int) ($this->posts()->where('state', Post::STATE_PUBLISHED)->count() ?? $this->posts_count),
             'avatar' => $this->whenLoaded('media', function () {
                 $file = $this->media->where('collection', 'avatar')->first();
                 $fallback = $this->media->first();
