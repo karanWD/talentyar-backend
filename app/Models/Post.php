@@ -11,7 +11,9 @@ class Post extends Model
     use \App\Traits\MediaTrait;
 
     const STATE_PUBLISHED = 1;
+
     const STATE_DRAFT = 2;
+
     const STATE_REJECTED = 3;
 
     const STATES = [
@@ -24,7 +26,17 @@ class Post extends Model
         'user_id',
         'state',
         'caption',
+        'height',
+        'width',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'height' => 'integer',
+            'width' => 'integer',
+        ];
+    }
 
     public function user(): BelongsTo
     {

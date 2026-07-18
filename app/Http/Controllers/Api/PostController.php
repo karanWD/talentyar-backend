@@ -10,7 +10,6 @@ use App\Models\Comment;
 use App\Models\Media;
 use App\Models\Post;
 use App\Models\PostLike;
-use App\Models\PostView;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -37,7 +36,7 @@ class PostController extends BaseApiController
         );
     }
 
-    public function userPosts(Request $request,$username): JsonResponse
+    public function userPosts(Request $request, $username): JsonResponse
     {
         $user = User::query()
             ->with('media')
@@ -45,12 +44,12 @@ class PostController extends BaseApiController
             ->withCount(['followers', 'following', 'posts'])
             ->first();
 
-        if (!$user) {
+        if (! $user) {
             return $this->errorResponse('User not found', 404);
         }
 
         $posts = $user->posts()
-            ->where('state',Post::STATE_PUBLISHED)
+            ->where('state', Post::STATE_PUBLISHED)
             ->withCount(['likes', 'dislikes', 'postViews'])
             ->with(['media', 'user', 'postLikes' => fn ($q) => $q->where('user_id', $user->id)])
             ->latest()
@@ -79,14 +78,14 @@ class PostController extends BaseApiController
             ->paginate($request->integer('per_page', 15))
             ->withQueryString();
 
-//        if($posts->count() == 0){
-//            $posts = Post::query()
-//                ->where('state', Post::STATE_PUBLISHED)
-//                ->with(['media', 'user', 'postLikes' => fn ($q) => $q->where('user_id', Auth::user()->id)])
-//                ->inRandomOrder()
-//                ->paginate($request->integer('per_page', 15))
-//                ->withQueryString();
-//        }
+        //        if($posts->count() == 0){
+        //            $posts = Post::query()
+        //                ->where('state', Post::STATE_PUBLISHED)
+        //                ->with(['media', 'user', 'postLikes' => fn ($q) => $q->where('user_id', Auth::user()->id)])
+        //                ->inRandomOrder()
+        //                ->paginate($request->integer('per_page', 15))
+        //                ->withQueryString();
+        //        }
 
         return $this->successResponse(
             ['posts' => PostResource::collection($posts)],
@@ -108,15 +107,11 @@ class PostController extends BaseApiController
             ->paginate($request->integer('per_page', 15))
             ->withQueryString();
 
-
-
         return $this->successResponse(
             ['posts' => PostResource::collection($posts)],
             'Feed retrieved successfully'
         );
     }
-
-
 
     /**
      * Create a post with one video (attach media by hash).
@@ -128,6 +123,8 @@ class PostController extends BaseApiController
         $post = Post::create([
             'user_id' => $user->id,
             'caption' => $request->validated('caption'),
+            'height' => $request->validated('height'),
+            'width' => $request->validated('width'),
             'state' => $request->validated('state', Post::STATE_DRAFT),
         ]);
 

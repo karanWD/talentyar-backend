@@ -9,7 +9,6 @@ class PostResource extends BaseResource
     /**
      * Get the resource data array.
      *
-     * @param Request $request
      * @return array<string, mixed>
      */
     protected function getResourceData(Request $request): array
@@ -20,14 +19,18 @@ class PostResource extends BaseResource
             'user' => $this->whenLoaded('user', fn () => new UserFollowResource($this->user)),
             'state' => $this->state,
             'caption' => $this->caption,
+            'height' => $this->height,
+            'width' => $this->width,
             'video' => $this->whenLoaded('media', function () {
                 $video = $this->media->where('collection', 'video')->first();
                 $fallback = $this->media->first();
                 $media = $video ?? $fallback;
+
                 return $media ? new MinimalMediaResource($media) : null;
             }),
             'thumbnail' => $this->whenLoaded('media', function () {
                 $thumb = $this->media->where('collection', 'thumbnail')->first();
+
                 return $thumb ? new MinimalMediaResource($thumb) : null;
             }),
             'likes_count' => (int) ($this->likes_count ?? 0),
