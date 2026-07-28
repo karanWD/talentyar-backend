@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ActivityFieldController;
 use App\Http\Controllers\Api\EvaluationController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\MediaController;
@@ -85,6 +86,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/posts/{post}/view', [PostController::class, 'recordView'])->name('posts.view');
 
             Route::get('/users/search', [UserController::class, 'search'])->name('users.search');
+            Route::post('/activity-fields', [ActivityFieldController::class, 'store'])->name('activity-fields.store');
 
             Route::get('/evaluations/months', [EvaluationController::class, 'months'])->name('evaluations.months');
             Route::post('/evaluations/media', [EvaluationController::class, 'upload'])->name('evaluations.upload');
@@ -101,6 +103,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
     Route::prefix('public')->name('public.')->group(function () {
         Route::get('/provinces', [PublicController::class, 'getProvinces'])->name('provinces');
         Route::get('/cities', [PublicController::class, 'getCities'])->name('cities');
+        Route::get('/activity-fields', [ActivityFieldController::class, 'index'])->name('activity-fields');
         Route::get('/plans', [PlanController::class, 'index'])->name('plans');
     });
 
