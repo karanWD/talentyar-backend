@@ -141,7 +141,7 @@ class AuthController extends BaseApiController
         return $this->successResponse(
             [
                 'token' => $token,
-                'user' => new UserResource($user),
+                'user' => new UserResource($user->load(['media', 'activityFields'])),
                 'first_user' => !$firstUserExists,
             ],
             'Login successful'
@@ -165,7 +165,7 @@ class AuthController extends BaseApiController
         return $this->successResponse(
             [
                 'token' => $token,
-                'user' => new UserResource($user),
+                'user' => new UserResource($user->load(['media', 'activityFields'])),
             ],
             'Token refreshed successfully'
         );
@@ -177,7 +177,7 @@ class AuthController extends BaseApiController
     public function getProfile(Request $request): JsonResponse
     {
         return $this->successResponse(
-            ['user' => new UserResource($request->user()->load('media'))],
+            ['user' => new UserResource($request->user()->load(['media', 'activityFields']))],
             'User retrieved successfully'
         );
     }
@@ -280,7 +280,7 @@ class AuthController extends BaseApiController
         $user = $request->user();
         $user->update($request->validated());
 
-        $user->load('media');
+        $user->load(['media', 'activityFields']);
 
         return $this->successResponse(
             ['user' => new UserResource($user)],
@@ -294,7 +294,7 @@ class AuthController extends BaseApiController
         $user->unAssignMedia('avatar');
         $videoMedia = Media::where('hash', $request->validated('profile_hash'))->first();
         $user->assignMedia($videoMedia, 'avatar');
-        $user->load('media');
+        $user->load(['media', 'activityFields']);
 
         return $this->successResponse(
             ['user' => new UserResource($user)],

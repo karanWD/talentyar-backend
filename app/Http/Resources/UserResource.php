@@ -51,6 +51,9 @@ class UserResource extends BaseResource
                 $media = $file ?? $fallback;
                 return $media ? new MinimalMediaResource($media) : null;
             }),
+            'activity_fields' => $this->whenLoaded('activityFields', function () {
+                return ActivityFieldResource::collection($this->activityFields)->resolve();
+            }),
             'subscription' => new SubscriptionResource($this->activeSubscription),
             // Merge in the timestamps, if any
             ...$this->includeTimestamps(),
