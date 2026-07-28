@@ -143,6 +143,12 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function activityFields(): BelongsToMany
+    {
+        return $this->belongsToMany(ActivityField::class, 'activity_field_user')
+            ->withTimestamps();
+    }
+
     /**
      * All subscription purchases for this user.
      */
