@@ -278,7 +278,14 @@ class AuthController extends BaseApiController
     public function updateProfile(UpdateProfileRequest $request): JsonResponse
     {
         $user = $request->user();
-        $user->update($request->validated());
+        $validated = $request->validated();
+
+        if (array_key_exists('activity_field_ids', $validated)) {
+            $user->activityFields()->sync($validated['activity_field_ids'] ?? []);
+            unset($validated['activity_field_ids']);
+        }
+
+        $user->update($validated);
 
         $user->load(['media', 'activityFields']);
 

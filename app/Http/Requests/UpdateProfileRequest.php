@@ -39,6 +39,8 @@ class UpdateProfileRequest extends FormRequest
             'post_skill' => ['nullable', 'string', 'in:'.implode(',', User::POST_SKILL)],
             'skill_level' => ['nullable', 'string', 'in:'.implode(',', User::SKILL_LEVEL)],
             'activity_history' => ['nullable', 'boolean'],
+            'activity_field_ids' => ['nullable', 'array'],
+            'activity_field_ids.*' => ['integer', 'distinct', 'exists:activity_fields,id'],
             'team_name' => ['nullable', 'string', 'max:255'],
             'favorite_iranian_team' => ['nullable', 'string', 'max:255'],
             'favorite_foreign_team' => ['nullable', 'string', 'max:255'],
