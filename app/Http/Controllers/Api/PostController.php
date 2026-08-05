@@ -122,6 +122,7 @@ class PostController extends BaseApiController
 
         $post = Post::create([
             'user_id' => $user->id,
+            'activity_fields_id' => $request->validated('activity_fields_id'),
             'caption' => $request->validated('caption'),
             'height' => $request->validated('height'),
             'width' => $request->validated('width'),

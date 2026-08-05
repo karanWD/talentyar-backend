@@ -12,6 +12,7 @@ class Evaluation extends Model
 
     public $fillable = [
         'user_id',
+        'activity_fields_id',
         'score',
         'pros_comment',
         'cons_comment',
@@ -28,6 +29,7 @@ class Evaluation extends Model
     ];
 
     protected $casts = [
+        'activity_fields_id' => 'integer',
         'analyzer_last_attempt_at' => 'datetime',
         'analyzer_succeeded_at' => 'datetime',
     ];
@@ -45,11 +47,17 @@ class Evaluation extends Model
     ];
 
     const ANALYZER_STATUS_PENDING = 'pending';
+
     const ANALYZER_STATUS_PROCESSING = 'processing';
+
     const ANALYZER_STATUS_RETRYING = 'retrying';
+
     const ANALYZER_STATUS_SUCCEEDED = 'succeeded';
+
     const ANALYZER_STATUS_FAILED = 'failed';
+
     const ANALYZER_STATUS_SKIPPED = 'skipped';
+
     const ANALYZER_STATUS_AI_FAILED = 'ai_failed';
 
     const ANALYZER_STATUSES = [
@@ -65,6 +73,11 @@ class Evaluation extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function activityField(): BelongsTo
+    {
+        return $this->belongsTo(ActivityField::class, 'activity_fields_id');
     }
 
     public function items(): HasMany

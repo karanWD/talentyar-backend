@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Jobs\AnalyzeEvaluationVideo;
 use App\Http\Requests\UploadMediaRequest;
 use App\Http\Resources\EvaluationResource;
 use App\Http\Resources\MediaResource;
+use App\Jobs\AnalyzeEvaluationVideo;
 use App\Models\Evaluation;
 use App\Models\Media;
 use App\Models\Post;
@@ -46,7 +46,6 @@ class EvaluationController extends BaseApiController
 
         $activeSubscription = $this->getActiveSubscription($request->user()->id);
         $subscriptionMonthState = $this->getSubscriptionMonthState($activeSubscription, $year);
-
 
         $evaluations = $request->user()
             ->evaluations()
@@ -95,7 +94,7 @@ class EvaluationController extends BaseApiController
     public function upload(UploadMediaRequest $request): JsonResponse
     {
         $file = $request->file('file');
-        $mediaService = new MediaService();
+        $mediaService = new MediaService;
 
         $media = $mediaService->addMediaFromUploadedFile(
             $file,
@@ -120,6 +119,7 @@ class EvaluationController extends BaseApiController
     {
         $validated = $request->validate([
             'video_hash' => ['required', 'string', 'exists:media,hash'],
+            'activity_fields_id' => ['required', 'integer', 'exists:activity_fields,id'],
         ]);
 
         $user = $request->user();
@@ -131,15 +131,16 @@ class EvaluationController extends BaseApiController
 
         $evaluation = Evaluation::create([
             'user_id' => $user->id,
+            'activity_fields_id' => $validated['activity_fields_id'],
             'analyzer_status' => Evaluation::ANALYZER_STATUS_PENDING,
         ]);
 
         $videoMedia = Media::where('hash', $validated['video_hash'])->firstOrFail();
         $evaluation->assignMedia($videoMedia, 'video');
 
-
         $post = Post::create([
             'user_id' => $user->id,
+            'activity_fields_id' => $validated['activity_fields_id'],
             'caption' => ' ',
             'state' => Post::STATE_DRAFT,
         ]);
@@ -208,6 +209,7 @@ class EvaluationController extends BaseApiController
 
             if ($evaluationMonthKey === null) {
                 $canUpload[$monthKey] = true;
+
                 continue;
             }
 

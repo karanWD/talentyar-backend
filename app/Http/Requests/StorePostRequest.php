@@ -24,6 +24,7 @@ class StorePostRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'activity_fields_id' => ['required', 'integer', 'exists:activity_fields,id'],
             'caption' => ['required', 'string', 'max:5000'],
             'height' => ['required', 'integer', 'min:1'],
             'width' => ['required', 'integer', 'min:1'],

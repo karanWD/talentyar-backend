@@ -24,6 +24,7 @@ class Post extends Model
 
     protected $fillable = [
         'user_id',
+        'activity_fields_id',
         'state',
         'caption',
         'height',
@@ -33,6 +34,7 @@ class Post extends Model
     protected function casts(): array
     {
         return [
+            'activity_fields_id' => 'integer',
             'height' => 'integer',
             'width' => 'integer',
         ];
@@ -41,6 +43,11 @@ class Post extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function activityField(): BelongsTo
+    {
+        return $this->belongsTo(ActivityField::class, 'activity_fields_id');
     }
 
     public function postLikes(): HasMany

@@ -14,6 +14,7 @@ class EvaluationResource extends BaseResource
     {
         return [
             'id' => $this->id,
+            'activity_fields_id' => $this->activity_fields_id,
             'score' => $this->score,
             'pros_comment' => $this->pros_comment,
             'cons_comment' => $this->cons_comment,
