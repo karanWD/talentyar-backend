@@ -10,6 +10,7 @@ class ActivityField extends Model
     protected $fillable = [
         'name',
         'slug',
+        'tag',
     ];
 
     public function users(): BelongsToMany
