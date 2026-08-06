@@ -16,6 +16,7 @@ class ActivityFieldResource extends BaseResource
             'name' => $this->name,
             'slug' => $this->slug,
             'tag' => $this->tag,
+            'sections' => $this->specialtySections(),
 //            ...$this->includeTimestamps(),
         ];
     }
