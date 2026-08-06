@@ -141,7 +141,7 @@ class AuthController extends BaseApiController
         return $this->successResponse(
             [
                 'token' => $token,
-                'user' => new UserResource($user->load(['media', 'activityFields'])),
+                'user' => new UserResource($this->loadUserProfileRelations($user)),
                 'first_user' => !$firstUserExists,
             ],
             'Login successful'
@@ -165,7 +165,7 @@ class AuthController extends BaseApiController
         return $this->successResponse(
             [
                 'token' => $token,
-                'user' => new UserResource($user->load(['media', 'activityFields'])),
+                'user' => new UserResource($this->loadUserProfileRelations($user)),
             ],
             'Token refreshed successfully'
         );
@@ -177,7 +177,7 @@ class AuthController extends BaseApiController
     public function getProfile(Request $request): JsonResponse
     {
         return $this->successResponse(
-            ['user' => new UserResource($request->user()->load(['media', 'activityFields']))],
+            ['user' => new UserResource($this->loadUserProfileRelations($request->user()))],
             'User retrieved successfully'
         );
     }
@@ -281,16 +281,25 @@ class AuthController extends BaseApiController
         $validated = $request->validated();
 
         if (array_key_exists('activity_field_ids', $validated)) {
-            $user->activityFields()->sync($validated['activity_field_ids'] ?? []);
+            $activityFieldIds = $validated['activity_field_ids'] ?? [];
+
+            $user->activityFields()->sync($activityFieldIds);
+
+            if ($activityFieldIds === []) {
+                $user->activityFieldSkills()->delete();
+            } else {
+                $user->activityFieldSkills()
+                    ->whereNotIn('activity_field_id', $activityFieldIds)
+                    ->delete();
+            }
+
             unset($validated['activity_field_ids']);
         }
 
         $user->update($validated);
 
-        $user->load(['media', 'activityFields']);
-
         return $this->successResponse(
-            ['user' => new UserResource($user)],
+            ['user' => new UserResource($this->loadUserProfileRelations($user))],
             'Profile updated successfully'
         );
     }
@@ -301,10 +310,9 @@ class AuthController extends BaseApiController
         $user->unAssignMedia('avatar');
         $videoMedia = Media::where('hash', $request->validated('profile_hash'))->first();
         $user->assignMedia($videoMedia, 'avatar');
-        $user->load(['media', 'activityFields']);
 
         return $this->successResponse(
-            ['user' => new UserResource($user)],
+            ['user' => new UserResource($this->loadUserProfileRelations($user))],
             'Profile updated successfully',
             201
         );
@@ -330,5 +338,10 @@ class AuthController extends BaseApiController
             ],
             $takenByOther ? 'Username is already taken' : 'Username is available'
         );
+    }
+
+    protected function loadUserProfileRelations(User $user): User
+    {
+        return $user->load(['media', 'activityFields', 'activityFieldSkills']);
     }
 }

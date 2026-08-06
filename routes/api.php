@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\PublicController;
 use App\Http\Controllers\Api\SubscriptionController;
+use App\Http\Controllers\Api\UserActivityFieldSkillController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Service\EvaluationsController as ServiceEvaluationsController;
 use Illuminate\Support\Facades\Route;
@@ -87,6 +88,12 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
             Route::get('/users/search', [UserController::class, 'search'])->name('users.search');
             Route::post('/activity-fields', [ActivityFieldController::class, 'store'])->name('activity-fields.store');
+            Route::post('/activity-fields/{activityField}/skills', [UserActivityFieldSkillController::class, 'store'])
+                ->name('activity-fields.skills.store');
+            Route::match(['put', 'patch'], '/activity-fields/{activityField}/skills', [UserActivityFieldSkillController::class, 'update'])
+                ->name('activity-fields.skills.update');
+            Route::delete('/activity-fields/{activityField}/skills', [UserActivityFieldSkillController::class, 'destroy'])
+                ->name('activity-fields.skills.destroy');
 
             Route::get('/evaluations/months', [EvaluationController::class, 'months'])->name('evaluations.months');
             Route::post('/evaluations/media', [EvaluationController::class, 'upload'])->name('evaluations.upload');

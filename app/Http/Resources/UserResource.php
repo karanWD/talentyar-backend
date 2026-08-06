@@ -51,8 +51,17 @@ class UserResource extends BaseResource
                 $media = $file ?? $fallback;
                 return $media ? new MinimalMediaResource($media) : null;
             }),
-            'activity_fields' => $this->whenLoaded('activityFields', function () {
-                return ActivityFieldResource::collection($this->activityFields)->resolve();
+            'activity_fields' => $this->whenLoaded('activityFields', function () use ($request) {
+                $skillsByFieldId = $this->relationLoaded('activityFieldSkills')
+                    ? $this->activityFieldSkills->keyBy('activity_field_id')
+                    : collect();
+
+                return $this->activityFields->map(function ($activityField) use ($request, $skillsByFieldId) {
+                    $data = (new ActivityFieldResource($activityField))->toArray($request);
+                    $data['skill_answers'] = $skillsByFieldId->get($activityField->id)?->answers;
+
+                    return $data;
+                })->values()->all();
             }),
             'subscription' => new SubscriptionResource($this->activeSubscription),
             // Merge in the timestamps, if any

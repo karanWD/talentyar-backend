@@ -107,7 +107,7 @@ class UserController extends BaseApiController
     public function showByUsername(Request $request, string $username): JsonResponse
     {
         $user = User::query()
-            ->with(['media', 'activityFields'])
+            ->with(['media', 'activityFields', 'activityFieldSkills'])
             ->where('username', $username)
             ->withCount(['followers', 'following', 'posts'])
             ->first();
