@@ -87,6 +87,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
             Route::get('/users/search', [UserController::class, 'search'])->name('users.search');
             Route::post('/activity-fields', [ActivityFieldController::class, 'store'])->name('activity-fields.store');
+            Route::delete('/activity-fields/{activityField}', [ActivityFieldController::class, 'destroy'])->name('activity-fields.destroy');
 
             Route::get('/evaluations/months', [EvaluationController::class, 'months'])->name('evaluations.months');
             Route::post('/evaluations/media', [EvaluationController::class, 'upload'])->name('evaluations.upload');

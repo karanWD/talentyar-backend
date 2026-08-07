@@ -37,4 +37,16 @@ class ActivityFieldController extends BaseApiController
             'User activity fields stored successfully'
         );
     }
+
+    public function destroy(Request $request, ActivityField $activityField): JsonResponse
+    {
+        $user = $request->user();
+        $user->activityFields()->detach($activityField->id);
+        $user->load('activityFields');
+
+        return $this->successResponse(
+            ['activity_fields' => ActivityFieldResource::collection($user->activityFields)->resolve()],
+            'User activity field deleted successfully'
+        );
+    }
 }
