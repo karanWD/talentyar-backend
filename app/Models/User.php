@@ -149,6 +149,11 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function activityFieldSkills(): HasMany
+    {
+        return $this->hasMany(UserActivityFieldSkill::class);
+    }
+
     /**
      * All subscription purchases for this user.
      */
