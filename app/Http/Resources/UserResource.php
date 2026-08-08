@@ -64,6 +64,9 @@ class UserResource extends BaseResource
                 })->values()->all();
             }),
             'subscription' => new SubscriptionResource($this->activeSubscription),
+            'subscriptions' => $this->whenLoaded('activeSubscriptions', function () {
+                return SubscriptionResource::collection($this->activeSubscriptions);
+            }),
             // Merge in the timestamps, if any
             ...$this->includeTimestamps(),
         ];

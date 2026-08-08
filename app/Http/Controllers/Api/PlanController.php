@@ -16,6 +16,7 @@ class PlanController extends BaseApiController
     public function index(Request $request): JsonResponse
     {
         $request->validate([
+            'activity_field_id' => ['required', 'integer', 'exists:activity_fields,id'],
             'type' => ['nullable', 'string', Rule::in([
                 Plan::TYPE_BASIC,
                 Plan::TYPE_PRO,
@@ -25,6 +26,7 @@ class PlanController extends BaseApiController
         ]);
 
         $query = Plan::query()
+            ->where('activity_field_id', $request->integer('activity_field_id'))
             ->where('status', Plan::STATUS_ACTIVE)
             ->orderBy('type')
             ->orderBy('duration');

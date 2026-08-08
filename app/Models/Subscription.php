@@ -9,6 +9,7 @@ class Subscription extends Model
 {
     protected $fillable = [
         'user_id',
+        'activity_field_id',
         'plan_id',
         'status',
         'price_paid',
@@ -20,8 +21,11 @@ class Subscription extends Model
     ];
 
     const STATUS_PENDING = 'pending';
+
     const STATUS_ACTIVE = 'active';
+
     const STATUS_EXPIRED = 'expired';
+
     const STATUS_CANCELLED = 'cancelled';
 
     const STATUSES = [
@@ -50,6 +54,11 @@ class Subscription extends Model
     public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class);
+    }
+
+    public function activityField(): BelongsTo
+    {
+        return $this->belongsTo(ActivityField::class);
     }
 
     public function isActive(): bool

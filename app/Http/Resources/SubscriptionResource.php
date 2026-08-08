@@ -9,13 +9,13 @@ class SubscriptionResource extends BaseResource
     /**
      * Get the resource data array.
      *
-     * @param Request $request
      * @return array<string, mixed>
      */
     protected function getResourceData(Request $request): array
     {
         return [
             'id' => $this->id,
+            'activity_field_id' => $this->activity_field_id,
             'plan' => new PlanResource($this->plan),
             'status' => $this->status,
             'price_paid' => $this->price_paid,
@@ -28,4 +28,3 @@ class SubscriptionResource extends BaseResource
         ];
     }
 }
-

@@ -14,6 +14,7 @@ class PlanResource extends BaseResource
     {
         return [
             'id' => $this->id,
+            'activity_field_id' => $this->activity_field_id,
             'name' => $this->name,
             'price' => (float) $this->price,
             'discount_price' => $this->discount_price !== null ? (float) $this->discount_price : 0,

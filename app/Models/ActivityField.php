@@ -27,6 +27,16 @@ class ActivityField extends Model
         return $this->hasMany(UserActivityFieldSkill::class);
     }
 
+    public function plans(): HasMany
+    {
+        return $this->hasMany(Plan::class);
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
     /**
      * @return array<string, mixed>
      */

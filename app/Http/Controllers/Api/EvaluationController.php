@@ -34,6 +34,10 @@ class EvaluationController extends BaseApiController
 
     public function months(Request $request): JsonResponse
     {
+        $validated = $request->validate([
+            'activity_fields_id' => ['required', 'integer', 'exists:activity_fields,id'],
+        ]);
+
         $now = Jalalian::now();
         $year = $request->integer('year', $now->getYear());
 
@@ -44,12 +48,14 @@ class EvaluationController extends BaseApiController
         $startDate = (new Jalalian($year, 1, 1))->toCarbon()->startOfDay();
         $endDate = (new Jalalian($year + 1, 1, 1))->toCarbon()->startOfDay();
 
-        $activeSubscription = $this->getActiveSubscription($request->user()->id);
+        $activityFieldId = $validated['activity_fields_id'];
+        $activeSubscription = $this->getActiveSubscription($request->user()->id, $activityFieldId);
         $subscriptionMonthState = $this->getSubscriptionMonthState($activeSubscription, $year);
 
         $evaluations = $request->user()
             ->evaluations()
             ->with(['media', 'items.item'])
+            ->where('activity_fields_id', $activityFieldId)
             ->where('created_at', '>=', $startDate)
             ->where('created_at', '<', $endDate)
             ->latest()
@@ -123,7 +129,10 @@ class EvaluationController extends BaseApiController
         ]);
 
         $user = $request->user();
-        $uploadAvailability = $this->getUploadAvailability($user->id);
+        $uploadAvailability = $this->getUploadAvailability(
+            $user->id,
+            $validated['activity_fields_id']
+        );
 
         if (! $uploadAvailability['can_upload']) {
             return $this->errorResponse($uploadAvailability['message'], 422);
@@ -232,11 +241,12 @@ class EvaluationController extends BaseApiController
         ];
     }
 
-    private function getActiveSubscription(int $userId): ?Subscription
+    private function getActiveSubscription(int $userId, int $activityFieldId): ?Subscription
     {
         return Subscription::query()
             ->with('plan')
             ->where('user_id', $userId)
+            ->where('activity_field_id', $activityFieldId)
             ->where('status', Subscription::STATUS_ACTIVE)
             ->whereNotNull('started_at')
             ->whereNotNull('expires_at')
@@ -285,9 +295,9 @@ class EvaluationController extends BaseApiController
     /**
      * @return array{can_upload: bool, message: string}
      */
-    private function getUploadAvailability(int $userId): array
+    private function getUploadAvailability(int $userId, int $activityFieldId): array
     {
-        $subscription = $this->getActiveSubscription($userId);
+        $subscription = $this->getActiveSubscription($userId, $activityFieldId);
 
         if ($subscription === null) {
             return [
@@ -313,6 +323,7 @@ class EvaluationController extends BaseApiController
     {
         return Evaluation::query()
             ->where('user_id', $subscription->user_id)
+            ->where('activity_fields_id', $subscription->activity_field_id)
             ->where('created_at', '>=', $subscription->started_at)
             ->where('created_at', '<', $subscription->expires_at)
             ->oldest('created_at')

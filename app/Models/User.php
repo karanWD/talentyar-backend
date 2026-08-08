@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +15,6 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
     use \App\Traits\MediaTrait;
-
 
     /**
      * The attributes that are mass assignable.
@@ -91,8 +90,6 @@ class User extends Authenticatable
         self::POST_SKILL_ST
     ];
 
-
-
     const SKILL_LEVEL_BEGINNER = 'beginner';
     const SKILL_LEVEL_SEMI_PROFESSIONAL = 'semi-professional';
     const SKILL_LEVEL_PROFESSIONAL = 'professional';
@@ -160,6 +157,17 @@ class User extends Authenticatable
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
+    }
+
+    /**
+     * All currently active subscriptions, one for each purchased activity field.
+     */
+    public function activeSubscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class)
+            ->where('status', Subscription::STATUS_ACTIVE)
+            ->where('started_at', '<=', now())
+            ->where('expires_at', '>', now());
     }
 
     /**

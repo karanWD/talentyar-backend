@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Plan extends Model
@@ -10,6 +11,7 @@ class Plan extends Model
     protected $table = 'plans';
 
     protected $fillable = [
+        'activity_field_id',
         'name',
         'price',
         'discount_price',
@@ -28,8 +30,6 @@ class Plan extends Model
         self::STATUS_INACTIVE => 'Inactive',
     ];
 
-
-
     const TYPE_BASIC = 'basic';
     const TYPE_PRO = 'pro';
     const TYPE_VIP = 'vip';
@@ -43,6 +43,11 @@ class Plan extends Model
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
+    }
+
+    public function activityField(): BelongsTo
+    {
+        return $this->belongsTo(ActivityField::class);
     }
 
     /**

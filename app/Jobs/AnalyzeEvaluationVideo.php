@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Evaluation;
 use App\Models\Plan;
+use App\Models\Subscription;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
@@ -31,7 +32,7 @@ class AnalyzeEvaluationVideo implements ShouldQueue
     public function handle(): void
     {
         $evaluation = Evaluation::query()
-            ->with(['user.activeSubscription.plan', 'media'])
+            ->with(['user', 'activityField', 'media'])
             ->find($this->evaluationId);
 
         if (! $evaluation) {
@@ -63,6 +64,16 @@ class AnalyzeEvaluationVideo implements ShouldQueue
             return;
         }
 
+        $activeSubscription = Subscription::query()
+            ->with('plan')
+            ->where('user_id', $evaluation->user_id)
+            ->where('activity_field_id', $evaluation->activity_fields_id)
+            ->where('status', Subscription::STATUS_ACTIVE)
+            ->where('started_at', '<=', now())
+            ->where('expires_at', '>', now())
+            ->latest('started_at')
+            ->first();
+
         $payload = [
             'evaluation_id' => $evaluation->id,
             'videoUrl' => $videoMedia->url,
@@ -70,8 +81,8 @@ class AnalyzeEvaluationVideo implements ShouldQueue
                 'age' => $this->resolveAge($evaluation->user?->birth_date),
                 'gender' => $this->resolveGender($evaluation->user),
                 'position' => $evaluation->user?->post_skill,
-                'field' => 'football',
-                'subscription' => $evaluation->user?->activeSubscription?->plan?->type ?? Plan::TYPE_BASIC,
+                'field' => $evaluation->activityField?->slug,
+                'subscription' => $activeSubscription?->plan?->type ?? Plan::TYPE_BASIC,
             ],
         ];
 

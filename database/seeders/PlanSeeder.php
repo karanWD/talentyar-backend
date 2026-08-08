@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\ActivityField;
 use App\Models\Plan;
 use Illuminate\Database\Seeder;
 
@@ -76,22 +77,27 @@ class PlanSeeder extends Seeder
 
     public function run(): void
     {
-        foreach (self::plans() as $type => $planData) {
-            foreach ($planData['prices'] as $duration => $price) {
-                Plan::updateOrCreate(
-                    ['name' => sprintf('%s-%d-month', $type, $duration)],
-                    [
-                        'price' => $price,
-                        'discount_price' => null,
-                        'duration' => $duration,
-                        'type' => $type,
-                        'status' => Plan::STATUS_ACTIVE,
-                        'description' => $this->buildDescription($planData['title'], $planData['subtitle']),
-                        'features' => $planData['features'],
-                    ]
-                );
+        ActivityField::query()->each(function (ActivityField $activityField): void {
+            foreach (self::plans() as $type => $planData) {
+                foreach ($planData['prices'] as $duration => $price) {
+                    Plan::updateOrCreate(
+                        [
+                            'activity_field_id' => $activityField->id,
+                            'name' => sprintf('%s-%d-month', $type, $duration),
+                        ],
+                        [
+                            'price' => $price,
+                            'discount_price' => null,
+                            'duration' => $duration,
+                            'type' => $type,
+                            'status' => Plan::STATUS_ACTIVE,
+                            'description' => $this->buildDescription($planData['title'], $planData['subtitle']),
+                            'features' => $planData['features'],
+                        ]
+                    );
+                }
             }
-        }
+        });
     }
 
     private static function feature(string $title, string $type = 'normal'): array
@@ -104,6 +110,6 @@ class PlanSeeder extends Seeder
 
     private function buildDescription(string $title, string $subtitle): string
     {
-        return trim($title . PHP_EOL . $subtitle . PHP_EOL);
+        return trim($title.PHP_EOL.$subtitle.PHP_EOL);
     }
 }

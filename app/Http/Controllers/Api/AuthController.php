@@ -39,6 +39,7 @@ class AuthController extends BaseApiController
          $key = 'otp_request:' . $phone;
          if (RateLimiter::tooManyAttempts($key, 300)) {
              $seconds = RateLimiter::availableIn($key);
+
              return response()->json([
                  'message' => 'Too many OTP requests. Please try again in ' . ceil($seconds / 60) . ' minutes.',
              ], 429);
@@ -65,7 +66,6 @@ class AuthController extends BaseApiController
                 'message' => $exception->getMessage(),
             ]);
         }
-
 
         // In production, send OTP via SMS service here
         // For now, it's logged (see OtpService)
@@ -107,14 +107,12 @@ class AuthController extends BaseApiController
 
         $firstUserExists = User::where('phone', $phone)->exists();
 
-
         // Find or create user
         $user = User::firstOrCreate(
             ['phone' => $phone]
         );
 
         $user->ensureReferralCode();
-
 
         // Revoke all existing tokens (optional - for single device login)
         // $user->tokens()->delete();
@@ -342,6 +340,6 @@ class AuthController extends BaseApiController
 
     protected function loadUserProfileRelations(User $user): User
     {
-        return $user->load(['media', 'activityFields', 'activityFieldSkills']);
+        return $user->load(['media', 'activityFields', 'activityFieldSkills', 'activeSubscriptions.plan']);
     }
 }

@@ -2,39 +2,40 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Resources\MinimalMediaResource;
-use App\Http\Resources\PostResource;
 use App\Http\Resources\SubscriptionResource;
-use App\Http\Resources\UserResource;
 use App\Models\Plan;
-use App\Models\Post;
 use App\Models\Subscription;
 use App\Models\Transaction;
-use App\Models\User;
 use App\Models\Wallet;
 use App\Services\BitpayPaymentService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class SubscriptionController extends BaseApiController
 {
-
     public function purchase(Request $request): JsonResponse
     {
         $request->validate([
             'plan_id' => 'required|exists:plans,id',
+            'activity_field_id' => 'required|integer|exists:activity_fields,id',
         ]);
 
-        $plan = Plan::find($request->plan_id);
-        if (!$plan) {
-            return $this->errorResponse('Plan not found', 404);
+        $activityFieldId = $request->integer('activity_field_id');
+        $plan = Plan::query()
+            ->whereKey($request->integer('plan_id'))
+            ->where('activity_field_id', $activityFieldId)
+            ->where('status', Plan::STATUS_ACTIVE)
+            ->first();
+
+        if (! $plan) {
+            return $this->errorResponse('Plan not found for this activity field', 404);
         }
 
         $user = $request->user();
-        if ($user->activeSubscription()->exists()) {
-            //todo:: handle exteded plan
-            return $this->errorResponse('User already has an active subscription', 400);
+        if ($user->activeSubscriptions()->where('activity_field_id', $activityFieldId)->exists()) {
+            // todo:: handle exteded plan
+            return $this->errorResponse('User already has an active subscription for this activity field', 400);
         }
 
         $response = null;
@@ -42,7 +43,7 @@ class SubscriptionController extends BaseApiController
             ? $plan->discount_price
             : ($plan->price ?? 0);
 
-        if($amount == 0) {
+        if ($amount == 0) {
             return $this->errorResponse('amount is 0', 400);
         }
 
@@ -54,7 +55,7 @@ class SubscriptionController extends BaseApiController
             'currency' => 'IRR',
         ]);
 
-        $transaction  = Transaction::query()
+        $transaction = Transaction::query()
             ->create([
                 'wallet_id' => $wallet->id,
                 'user_id' => $user->id,
@@ -63,23 +64,22 @@ class SubscriptionController extends BaseApiController
                 'status' => Transaction::STATUS_PENDING,
                 'amount' => $amount,
                 'currency' => $wallet->currency ?? 'IRR',
-                'description' => 'Subscription purchase for plan: ' . $plan->name,
+                'description' => 'Subscription purchase for plan: '.$plan->name,
                 'plan_id' => $plan->id,
             ]);
 
-        $payment = new BitpayPaymentService();
-        $response = $payment->requestPayment($amount, 'https://api.talentyar.com/api/v1/callback' , $transaction->id,$user->phone,$user->username,'description');
+        $payment = new BitpayPaymentService;
+        $response = $payment->requestPayment($amount, 'https://api.talentyar.com/api/v1/callback', $transaction->id, $user->phone, $user->username, 'description');
         $url = $response['gateway_url'] ?? null;
 
         $transaction->update([
-           'meta_data' => [
-               'id_get' => $response['id_get'] ?? null,
-               'raw' => $response['raw'] ?? null,
-           ],
+            'meta_data' => [
+                'id_get' => $response['id_get'] ?? null,
+                'raw' => $response['raw'] ?? null,
+            ],
         ]);
 
-
-        if (is_null($url)){
+        if (is_null($url)) {
             return $this->errorResponse('payment gateway down!', 400);
         }
 
@@ -88,27 +88,38 @@ class SubscriptionController extends BaseApiController
         ], 'go to payment gate', 200);
 
         // todo:: add active for test
-//        $subscription = $user->subscriptions()->create([
-//            'plan_id' => $plan->id,
-//            'status' => Subscription::STATUS_ACTIVE,
-//            'price_paid' => $amount,
-//            'discount_price' => $plan->discount_price ?? 0,
-//            'started_at' => now(),
-//            'expires_at' => now()->addDays($plan->duration),
-//        ]);
-//
-//        return $this->successResponse([
-//            'subscription' => new SubscriptionResource($subscription),
-//        ], 'Subscription purchased successfully', 201);
+        //        $subscription = $user->subscriptions()->create([
+        //            'activity_field_id' => $plan->activity_field_id,
+        //            'plan_id' => $plan->id,
+        //            'status' => Subscription::STATUS_ACTIVE,
+        //            'price_paid' => $amount,
+        //            'discount_price' => $plan->discount_price ?? 0,
+        //            'started_at' => now(),
+        //            'expires_at' => now()->addDays($plan->duration),
+        //        ]);
+        //
+        //        return $this->successResponse([
+        //            'subscription' => new SubscriptionResource($subscription),
+        //        ], 'Subscription purchased successfully', 201);
     }
 
     public function getActiveSubscription(Request $request): JsonResponse
     {
+        $validated = $request->validate([
+            'activity_field_id' => 'required|integer|exists:activity_fields,id',
+        ]);
+
         $user = $request->user();
-        $subscription = $user->activeSubscription()->first();
-        if (!$subscription) {
-            return $this->errorResponse('User does not have an active subscription', 404);
+        $subscription = $user->activeSubscriptions()
+            ->with('plan')
+            ->where('activity_field_id', $validated['activity_field_id'])
+            ->latest('started_at')
+            ->first();
+
+        if (! $subscription) {
+            return $this->errorResponse('User does not have an active subscription for this activity field', 404);
         }
+
         return $this->successResponse([
             'subscription' => new SubscriptionResource($subscription),
         ], 'Active subscription retrieved successfully');
@@ -120,26 +131,26 @@ class SubscriptionController extends BaseApiController
             ->with(['plan', 'user'])
             ->where('id', $request->get('factorId'))
             ->first();
-        if (!$transaction) {
+        if (! $transaction) {
             return $this->paymentResultRedirect('failed');
         }
 
-        if($transaction->status != Transaction::STATUS_PENDING){
+        if ($transaction->status != Transaction::STATUS_PENDING) {
             return $this->paymentResultRedirect('failed');
         }
 
         $user = $transaction->user;
         $plan = $transaction->plan;
 
-        if (!$user || !$plan) {
+        if (! $user || ! $plan) {
             return $this->paymentResultRedirect('failed');
         }
 
         $response = null;
-        $payment = new BitpayPaymentService();
+        $payment = new BitpayPaymentService;
         $response = $payment->verifyPayment($request->get('trans_id'), $request->get('id_get'));
 
-        if (is_null($response)){
+        if (is_null($response)) {
             return $this->paymentResultRedirect('failed');
         }
 
@@ -149,16 +160,17 @@ class SubscriptionController extends BaseApiController
             ]),
         ]);
 
-        if ($response['verified'] == true){
+        if ($response['verified'] == true) {
 
             $subscription = $user->subscriptions()->create([
-                    'plan_id' => $plan->id,
-                    'status' => Subscription::STATUS_ACTIVE,
-                    'price_paid' => $transaction->amount,
-                    'discount_price' => $plan->discount_price ?? 0,
-                    'started_at' => now(),
-                    'expires_at' => now()->addDays($plan->duration),
-                ]);
+                'activity_field_id' => $plan->activity_field_id,
+                'plan_id' => $plan->id,
+                'status' => Subscription::STATUS_ACTIVE,
+                'price_paid' => $transaction->amount,
+                'discount_price' => $plan->discount_price ?? 0,
+                'started_at' => now(),
+                'expires_at' => now()->addDays($plan->duration),
+            ]);
 
             $transaction->update([
                 'status' => Transaction::STATUS_SUCCESS,
@@ -166,7 +178,7 @@ class SubscriptionController extends BaseApiController
             ]);
 
             return $this->paymentResultRedirect('success');
-        }else {
+        } else {
             $transaction->update([
                 'status' => Transaction::STATUS_FAIL,
             ]);
@@ -178,9 +190,6 @@ class SubscriptionController extends BaseApiController
 
     private function paymentResultRedirect(string $status): RedirectResponse
     {
-        return redirect()->away('https://talentyar.com/payment/result?status=' . urlencode($status));
+        return redirect()->away('https://talentyar.com/payment/result?status='.urlencode($status));
     }
-
-
-
 }
