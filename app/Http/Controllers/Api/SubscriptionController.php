@@ -105,24 +105,25 @@ class SubscriptionController extends BaseApiController
 
     public function getActiveSubscription(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'activity_field_id' => 'required|integer|exists:activity_fields,id',
+        $request->validate([
+            'activity_field_id' => 'nullable|integer|exists:activity_fields,id',
         ]);
 
         $user = $request->user();
-        $subscription = $user->activeSubscriptions()
-            ->with('plan')
-            ->where('activity_field_id', $validated['activity_field_id'])
-            ->latest('started_at')
-            ->first();
+        $query = $user->activeSubscriptions()->with('plan');
 
-        if (! $subscription) {
-            return $this->errorResponse('User does not have an active subscription for this activity field', 404);
+        if ($request->filled('activity_field_id')) {
+            $query->where('activity_field_id', $request->integer('activity_field_id'));
         }
 
+        $subscriptions = $query
+            ->orderBy('activity_field_id')
+            ->latest('started_at')
+            ->get();
+
         return $this->successResponse([
-            'subscription' => new SubscriptionResource($subscription),
-        ], 'Active subscription retrieved successfully');
+            'subscriptions' => SubscriptionResource::collection($subscriptions)->resolve(),
+        ], 'Active subscriptions retrieved successfully');
     }
 
     public function callback(Request $request)
