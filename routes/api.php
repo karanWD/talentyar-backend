@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ItemController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ActivityFieldController;
 use App\Http\Controllers\Api\EvaluationController;
@@ -121,6 +122,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::get('/evaluations/{evaluation}/analysis-status', [ServiceEvaluationsController::class, 'analysisStatus'])->name('evaluations.analysis-status');
         Route::post('/evaluations/{evaluation}/store', [ServiceEvaluationsController::class, 'store'])->name('evaluations.store');
         Route::post('/evaluations/{evaluation}/fail', [ServiceEvaluationsController::class, 'fail'])->name('evaluations.fail');
+        Route::get('/evaluations-items', [ItemController::class, 'index'])->name('items.index');
     });
 
     Route::get('/callback', [SubscriptionController::class, 'callback'])->name('callback');

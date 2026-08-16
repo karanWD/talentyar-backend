@@ -21,18 +21,14 @@ class ItemController extends BaseApiController
 
     public function index(Request $request): JsonResponse
     {
-        if ($error = $this->authorizeOrFail($request, 'update-evaluation')) {
-            return $error;
-        }
-
         $query = Item::query()->orderBy('id');
 
-        if ($request->filled('type')) {
-            $query->where('type', $request->string('type')->toString());
+        if ($request->filled('activity_field_id')) {
+            $query->where('activity_field_id', $request->integer('activity_field_id'));
         }
 
         return $this->successResponse(
-            ['items' => $query->get(['id', 'name', 'type'])],
+            ['items' => $query->get(['id', 'name', 'activity_field_id'])],
             'Items retrieved successfully'
         );
     }

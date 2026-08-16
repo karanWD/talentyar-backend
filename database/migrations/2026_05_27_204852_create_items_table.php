@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('items', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('type');
-            $table->unique(['name', 'type']);
+            $table->unsignedBigInteger('activity_field_id');
+            $table->unique(['name', 'activity_field_id']);
             $table->timestamps();
         });
     }

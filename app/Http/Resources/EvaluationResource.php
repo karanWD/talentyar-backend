@@ -32,7 +32,7 @@ class EvaluationResource extends BaseResource
                 'item' => $evaluationItem->relationLoaded('item') && $evaluationItem->item ? [
                     'id' => $evaluationItem->item->id,
                     'name' => $evaluationItem->item->name,
-                    'type' => $evaluationItem->item->type,
+                    'activity_field_id' => $evaluationItem->item->activity_field_id,
                 ] : null,
             ])->values()),
             ...$this->includeTimestamps(),

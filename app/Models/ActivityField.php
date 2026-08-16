@@ -37,6 +37,11 @@ class ActivityField extends Model
         return $this->hasMany(Subscription::class);
     }
 
+    public function items(): HasMany
+    {
+        return $this->hasMany(Item::class);
+    }
+
     /**
      * @return array<string, mixed>
      */
