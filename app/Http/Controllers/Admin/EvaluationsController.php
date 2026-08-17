@@ -152,7 +152,7 @@ class EvaluationsController extends BaseApiController
     }
 
     /**
-     * Update evaluation summary fields without touching item scores.
+     * Update evaluation summary fields and optionally replace item scores.
      */
     public function updateDetails(Request $request, Evaluation $evaluation): JsonResponse
     {
@@ -166,16 +166,40 @@ class EvaluationsController extends BaseApiController
             'cons_comment' => ['sometimes', 'nullable', 'string'],
             'suggestion' => ['sometimes', 'nullable', 'string'],
             'summary' => ['sometimes', 'nullable', 'string'],
+            'items' => ['sometimes', 'array', 'min:1'],
+            'items.*.item_id' => ['required_with:items', 'integer', 'distinct', 'exists:items,id'],
+            'items.*.score' => ['required_with:items', 'integer', 'min:0'],
         ]);
 
         if ($validated === []) {
             return $this->errorResponse(
-                'At least one of score, pros_comment, cons_comment, suggestion, or summary is required',
+                'At least one of score, pros_comment, cons_comment, suggestion, summary, or items is required',
                 422
             );
         }
 
-        $evaluation->update($validated);
+        DB::transaction(function () use ($evaluation, $validated): void {
+            $payload = collect($validated)->except(['items'])->all();
+
+            if (array_key_exists('items', $validated)) {
+                $items = collect($validated['items']);
+
+                if (! array_key_exists('score', $payload)) {
+                    $payload['score'] = round($items->avg('score'), 2);
+                }
+
+                $evaluation->items()->delete();
+
+                $items->each(fn (array $item) => EvaluationItem::create([
+                    'evaluation_id' => $evaluation->id,
+                    'item_id' => $item['item_id'],
+                    'score' => $item['score'],
+                ]));
+            }
+
+            $evaluation->update($payload);
+        });
+
         $evaluation->load(['user', 'media', 'items.item']);
 
         return $this->successResponse(
