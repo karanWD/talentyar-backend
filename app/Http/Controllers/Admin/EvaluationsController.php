@@ -126,6 +126,64 @@ class EvaluationsController extends BaseApiController
         );
     }
 
+    /**
+     * Update evaluation moderation status only.
+     */
+    public function updateStatus(Request $request, Evaluation $evaluation): JsonResponse
+    {
+        if ($error = $this->authorizeOrFail($request, 'update-evaluation')) {
+            return $error;
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(Evaluation::STATUSES)],
+        ]);
+
+        $evaluation->update([
+            'status' => $validated['status'],
+        ]);
+
+        $evaluation->load(['user', 'media', 'items.item']);
+
+        return $this->successResponse(
+            ['evaluation' => new EvaluationResource($evaluation)],
+            'Evaluation status updated successfully'
+        );
+    }
+
+    /**
+     * Update evaluation summary fields without touching item scores.
+     */
+    public function updateDetails(Request $request, Evaluation $evaluation): JsonResponse
+    {
+        if ($error = $this->authorizeOrFail($request, 'update-evaluation')) {
+            return $error;
+        }
+
+        $validated = $request->validate([
+            'score' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'pros_comment' => ['sometimes', 'nullable', 'string'],
+            'cons_comment' => ['sometimes', 'nullable', 'string'],
+            'suggestion' => ['sometimes', 'nullable', 'string'],
+            'summary' => ['sometimes', 'nullable', 'string'],
+        ]);
+
+        if ($validated === []) {
+            return $this->errorResponse(
+                'At least one of score, pros_comment, cons_comment, suggestion, or summary is required',
+                422
+            );
+        }
+
+        $evaluation->update($validated);
+        $evaluation->load(['user', 'media', 'items.item']);
+
+        return $this->successResponse(
+            ['evaluation' => new EvaluationResource($evaluation)],
+            'Evaluation details updated successfully'
+        );
+    }
+
     public function retry(Request $request, Evaluation $evaluation)
     {
         if ($error = $this->authorizeOrFail($request, 'update-evaluation')) {
