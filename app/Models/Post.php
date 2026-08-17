@@ -25,6 +25,7 @@ class Post extends Model
     protected $fillable = [
         'user_id',
         'activity_fields_id',
+        'evaluation_id',
         'state',
         'caption',
         'height',
@@ -35,6 +36,7 @@ class Post extends Model
     {
         return [
             'activity_fields_id' => 'integer',
+            'evaluation_id' => 'integer',
             'height' => 'integer',
             'width' => 'integer',
         ];
@@ -48,6 +50,11 @@ class Post extends Model
     public function activityField(): BelongsTo
     {
         return $this->belongsTo(ActivityField::class, 'activity_fields_id');
+    }
+
+    public function evaluation(): BelongsTo
+    {
+        return $this->belongsTo(Evaluation::class);
     }
 
     public function postLikes(): HasMany

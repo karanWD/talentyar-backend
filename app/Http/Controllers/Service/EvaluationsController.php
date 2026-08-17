@@ -73,7 +73,7 @@ class EvaluationsController extends BaseApiController
                 'suggestion' => $validated['suggestion'],
                 'summary' => $validated['summary'],
                 'score' => $validated['score'] ?? round($items->avg('score'), 2),
-                'status' => $validated['status'] ?? Evaluation::status_approved,
+                'status' => Evaluation::status_approved_ai,
             ]);
 
             $evaluation->items()->delete();

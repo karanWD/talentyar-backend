@@ -150,6 +150,7 @@ class EvaluationController extends BaseApiController
         $post = Post::create([
             'user_id' => $user->id,
             'activity_fields_id' => $validated['activity_fields_id'],
+            'evaluation_id' => $evaluation->id,
             'caption' => ' ',
             'state' => Post::STATE_DRAFT,
         ]);

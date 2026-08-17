@@ -39,10 +39,12 @@ class Evaluation extends Model
     const status_approved = 'approved';
 
     const status_rejected = 'rejected';
+    const status_approved_ai = 'approved_ai';
 
     const STATUSES = [
         self::status_pending,
         self::status_approved,
+        self::status_approved_ai,
         self::status_rejected,
     ];
 
@@ -83,5 +85,10 @@ class Evaluation extends Model
     public function items(): HasMany
     {
         return $this->hasMany(EvaluationItem::class);
+    }
+
+    public function posts(): HasMany
+    {
+        return $this->hasMany(Post::class);
     }
 }
