@@ -7,6 +7,7 @@ use App\Http\Resources\EvaluationResource;
 use App\Jobs\AnalyzeEvaluationVideo;
 use App\Models\Evaluation;
 use App\Models\EvaluationItem;
+use App\Models\Post;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -139,9 +140,17 @@ class EvaluationsController extends BaseApiController
             'status' => ['required', Rule::in(Evaluation::STATUSES)],
         ]);
 
-        $evaluation->update([
-            'status' => $validated['status'],
-        ]);
+        DB::transaction(function () use ($evaluation, $validated): void {
+            $evaluation->update([
+                'status' => $validated['status'],
+            ]);
+
+            if ($validated['status'] === Evaluation::status_approved) {
+                $evaluation->posts()->update([
+                    'state' => Post::STATE_PUBLISHED,
+                ]);
+            }
+        });
 
         $evaluation->load(['user', 'media', 'items.item']);
 
