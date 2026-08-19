@@ -47,6 +47,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/evaluations/{evaluation}/status', [EvaluationsController::class, 'updateStatus'])->name('evaluations.status');
             Route::post('/evaluations/{evaluation}/details', [EvaluationsController::class, 'updateDetails'])->name('evaluations.details');
             Route::post('/evaluations/{evaluation}/retry', [EvaluationsController::class, 'retry'])->name('evaluations.retry');
+            Route::delete('/evaluations/{evaluation}', [EvaluationsController::class, 'destroy'])->name('evaluations.destroy');
 
             Route::get('/items', [ItemController::class, 'index'])->name('items.index');
         });
