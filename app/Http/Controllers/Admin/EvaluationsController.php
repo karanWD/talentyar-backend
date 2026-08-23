@@ -7,10 +7,14 @@ use App\Http\Resources\EvaluationResource;
 use App\Jobs\AnalyzeEvaluationVideo;
 use App\Models\Evaluation;
 use App\Models\EvaluationItem;
+use App\Models\Media;
+use App\Models\Post;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use RuntimeException;
 
 class EvaluationsController extends BaseApiController
 {
@@ -139,9 +143,17 @@ class EvaluationsController extends BaseApiController
             'status' => ['required', Rule::in(Evaluation::STATUSES)],
         ]);
 
-        $evaluation->update([
-            'status' => $validated['status'],
-        ]);
+        DB::transaction(function () use ($evaluation, $validated): void {
+            $evaluation->update([
+                'status' => $validated['status'],
+            ]);
+
+            if ($validated['status'] === Evaluation::status_approved) {
+                $evaluation->posts()->update([
+                    'state' => Post::STATE_PUBLISHED,
+                ]);
+            }
+        });
 
         $evaluation->load(['user', 'media', 'items.item']);
 
@@ -214,6 +226,10 @@ class EvaluationsController extends BaseApiController
             return $error;
         }
 
+        $evaluation->update([
+           'status' => Evaluation::status_pending,
+        ]);
+
         AnalyzeEvaluationVideo::dispatch($evaluation->id)->afterCommit();
 
         return $this->successResponse(
@@ -221,5 +237,56 @@ class EvaluationsController extends BaseApiController
             'Evaluation JObed successfully'
         );
 
+    }
+
+    /**
+     * Delete an evaluation, its posts, and their stored media.
+     */
+    public function destroy(Request $request, Evaluation $evaluation): JsonResponse
+    {
+        if ($error = $this->authorizeOrFail($request, 'delete-evaluation')) {
+            return $error;
+        }
+
+        $evaluation->load(['media', 'posts.media']);
+
+        $media = $evaluation->media
+            ->concat($evaluation->posts->flatMap->media)
+            ->unique('id')
+            ->values();
+        $mediaIds = $media->pluck('id');
+
+        DB::transaction(function () use ($evaluation, $media, $mediaIds): void {
+            foreach ($media->groupBy(fn (Media $item): string => ($item->disk ?: 's3').'|'.$item->path) as $fileMedia) {
+                /** @var Media $file */
+                $file = $fileMedia->first();
+                $isUsedElsewhere = Media::query()
+                    ->whereNotIn('id', $mediaIds)
+                    ->where('disk', $file->disk)
+                    ->where('path', $file->path)
+                    ->exists();
+
+                if (! $isUsedElsewhere) {
+                    $disk = $file->disk ?: 's3';
+
+                    if (! Storage::disk($disk)->delete($file->path)) {
+                        throw new RuntimeException("Unable to delete evaluation media from disk [{$disk}].");
+                    }
+                }
+            }
+
+            foreach ($media as $item) {
+                $item->forceDelete();
+            }
+
+            $evaluation->posts()->delete();
+            $evaluation->items()->delete();
+            $evaluation->delete();
+        });
+
+        return $this->successResponse(
+            null,
+            'Evaluation deleted successfully'
+        );
     }
 }

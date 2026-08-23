@@ -40,6 +40,7 @@ class PermissionSeeder extends Seeder
 
             'read-evaluation',
             'update-evaluation',
+            'delete-evaluation',
 
             'read-items',
         ];
