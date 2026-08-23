@@ -6,7 +6,6 @@ use App\Models\Evaluation;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -14,6 +13,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Morilog\Jalali\Jalalian;
 use Throwable;
 
 class AnalyzeEvaluationVideo implements ShouldQueue
@@ -130,7 +130,7 @@ class AnalyzeEvaluationVideo implements ShouldQueue
         }
 
         try {
-            return Carbon::parse($birthDate)->age;
+            return Jalalian::fromFormat('Y-m-d', $birthDate)->toCarbon()->age;
         } catch (\Throwable $exception) {
             Log::warning('Unable to calculate user age for evaluation analyzer payload.', [
                 'birth_date' => $birthDate,
