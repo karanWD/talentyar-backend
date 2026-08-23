@@ -86,6 +86,8 @@ class AnalyzeEvaluationVideo implements ShouldQueue
             ],
         ];
 
+        Log::warning('PAYLOAD-AI',$payload);
+
         try {
             $response = Http::timeout(30)
                 ->acceptJson()
