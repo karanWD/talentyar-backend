@@ -226,6 +226,10 @@ class EvaluationsController extends BaseApiController
             return $error;
         }
 
+        $evaluation->update([
+           'status' => Evaluation::status_pending,
+        ]);
+
         AnalyzeEvaluationVideo::dispatch($evaluation->id)->afterCommit();
 
         return $this->successResponse(
