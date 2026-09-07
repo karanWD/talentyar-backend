@@ -22,10 +22,24 @@ class Post extends Model
         self::STATE_REJECTED,
     ];
 
+    const TYPE_VIDEO = 'video';
+
+    const TYPE_GALLERY = 'gallery';
+
+    const TYPES = [
+        self::TYPE_VIDEO,
+        self::TYPE_GALLERY,
+    ];
+
+    protected $attributes = [
+        'type' => self::TYPE_VIDEO,
+    ];
+
     protected $fillable = [
         'user_id',
         'activity_fields_id',
         'evaluation_id',
+        'type',
         'state',
         'caption',
         'height',

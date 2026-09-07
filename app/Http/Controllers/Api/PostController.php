@@ -114,28 +114,38 @@ class PostController extends BaseApiController
     }
 
     /**
-     * Create a post with one video (attach media by hash).
+     * Create a video or gallery post (attach media by hash).
      */
     public function store(StorePostRequest $request): JsonResponse
     {
         $user = $request->user();
+        $type = $request->validated('type', Post::TYPE_VIDEO);
 
         $post = Post::create([
             'user_id' => $user->id,
             'activity_fields_id' => $request->validated('activity_fields_id'),
+            'type' => $type,
             'caption' => $request->validated('caption'),
             'height' => $request->validated('height'),
             'width' => $request->validated('width'),
             'state' => $request->validated('state', Post::STATE_DRAFT),
         ]);
 
-        $videoMedia = Media::where('hash', $request->validated('video_hash'))->first();
-        $post->assignMedia($videoMedia, 'video');
+        if ($type === Post::TYPE_VIDEO) {
+            $videoMedia = Media::where('hash', $request->validated('video_hash'))->firstOrFail();
+            $post->assignMedia($videoMedia, 'video');
 
-        if ($request->filled('thumbnail_hash')) {
-            $thumbnailMedia = Media::where('hash', $request->validated('thumbnail_hash'))->first();
-            if ($thumbnailMedia) {
+            if ($request->filled('thumbnail_hash')) {
+                $thumbnailMedia = Media::where('hash', $request->validated('thumbnail_hash'))->firstOrFail();
                 $post->assignMedia($thumbnailMedia, 'thumbnail');
+            }
+        } else {
+            $imageMedia = Media::whereIn('hash', $request->validated('image_hashes'))
+                ->get()
+                ->keyBy('hash');
+
+            foreach ($request->validated('image_hashes') as $imageHash) {
+                $post->assignMedia($imageMedia->get($imageHash), 'gallery');
             }
         }
 

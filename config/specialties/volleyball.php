@@ -90,7 +90,7 @@ return [
                         'setter' => 'پاسور',
                         'libero' => 'لیبرو',
                         'outside_hitter' => 'دریافت‌کننده قدرتی',
-                        'middle_blocker' => 'سرعتی‌زن',
+                        'middle_blocker' => 'دفاع وسط',
                         'opposite' => 'قطر پاسور',
                     ],
                 ],
