@@ -144,6 +144,12 @@ class PostController extends BaseApiController
                 ->get()
                 ->keyBy('hash');
 
+
+            if ($request->filled('thumbnail_hash')) {
+                $thumbnailMedia = Media::where('hash', $request->validated('thumbnail_hash'))->firstOrFail();
+                $post->assignMedia($thumbnailMedia, 'thumbnail');
+            }
+
             foreach ($request->validated('image_hashes') as $imageHash) {
                 $post->assignMedia($imageMedia->get($imageHash), 'gallery');
             }
