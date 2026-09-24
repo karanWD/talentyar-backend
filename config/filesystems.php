@@ -63,12 +63,12 @@ return [
 
         's3_parspack' => [
             'driver' => 's3',
-            'key' => env('PARSPACK_AWS_ACCESS_KEY_ID','EoA2STad1YXib3P2'),
-            'secret' => env('PARSPACK_AWS_SECRET_ACCESS_KEY','EFSwLR8aWmESwDedP6XMjUkt7bVjCFwY'),
+            'key' => env('PARSPACK_AWS_ACCESS_KEY_ID','IgYvdVplBcfRt2c5'),
+            'secret' => env('PARSPACK_AWS_SECRET_ACCESS_KEY','DCVPz0wSFbj4dcR8z6gHKqwg8R5zHzGq'),
             'region' => env('PARSPACK_AWS_DEFAULT_REGION', 'us-east-1'),
-            'bucket' => env('PARSPACK_AWS_BUCKET','c190045'),
-            'url' => env('PARSPACK_AWS_URL','https://c190045.parspack.net'),
-            'endpoint' => env('PARSPACK_AWS_ENDPOINT','https://c190045.parspack.net'),
+            'bucket' => env('PARSPACK_AWS_BUCKET','c151961'),
+            'url' => env('PARSPACK_AWS_URL','https://c151961.parspack.net'),
+            'endpoint' => env('PARSPACK_AWS_ENDPOINT','https://c151961.parspack.net'),
             'use_path_style_endpoint' => env('PARSPACK_AWS_USE_PATH_STYLE_ENDPOINT', true),
             'visibility' => 'public',
             'throw' => true,
