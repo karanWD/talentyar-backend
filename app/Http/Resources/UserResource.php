@@ -15,14 +15,16 @@ class UserResource extends BaseResource
      */
     protected function getResourceData(Request $request): array
     {
+        $is_me = $request->user() ? $request->user()->id === $this->id : false;
+
         return [
             'id' => $this->id,
-            'is_me' => true,
+            'is_me' => $is_me,
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
             'full_name' => trim("{$this->first_name} {$this->last_name}") ?: null,
-            'phone' => $this->phone,
-            'email' => $this->email,
+            'phone' => $is_me ? $this->phone : null,
+            'email' => $is_me ? $this->email : null,
             'referral_code' => $this->referral_code,
             'referrals_count' => (int) ($this->referrals_count ?? $this->referrals()->count()),
             'referred_by_user_id' => $this->referred_by_user_id,
@@ -51,7 +53,7 @@ class UserResource extends BaseResource
                 $media = $file ?? $fallback;
                 return $media ? new MinimalMediaResource($media) : null;
             }),
-            'activity_fields' => $this->whenLoaded('activityFields', function () use ($request) {
+            'activity_fields' => $is_me ? $this->whenLoaded('activityFields', function () use ($request) {
                 $skillsByFieldId = $this->relationLoaded('activityFieldSkills')
                     ? $this->activityFieldSkills->keyBy('activity_field_id')
                     : collect();
@@ -62,11 +64,11 @@ class UserResource extends BaseResource
 
                     return $data;
                 })->values()->all();
-            }),
-            'subscription' => new SubscriptionResource($this->activeSubscription),
-            'subscriptions' => $this->whenLoaded('activeSubscriptions', function () {
+            }) : null,
+            'subscription' => $is_me ? new SubscriptionResource($this->activeSubscription) : null,
+            'subscriptions' => $is_me ? $this->whenLoaded('activeSubscriptions', function () {
                 return SubscriptionResource::collection($this->activeSubscriptions);
-            }),
+            }) : null,
             // Merge in the timestamps, if any
             ...$this->includeTimestamps(),
         ];
