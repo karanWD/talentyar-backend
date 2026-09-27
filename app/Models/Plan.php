@@ -15,6 +15,7 @@ class Plan extends Model
         'name',
         'price',
         'discount_price',
+        're_evaluation_price',
         'duration',
         'type',
         'status',
@@ -23,15 +24,18 @@ class Plan extends Model
     ];
 
     const STATUS_ACTIVE = 'active';
+
     const STATUS_INACTIVE = 'inactive';
-    
+
     const STATUS = [
         self::STATUS_ACTIVE => 'Active',
         self::STATUS_INACTIVE => 'Inactive',
     ];
 
     const TYPE_BASIC = 'basic';
+
     const TYPE_PRO = 'pro';
+
     const TYPE_VIP = 'vip';
 
     const TYPE = [
@@ -53,7 +57,7 @@ class Plan extends Model
     /**
      * Normalize features so the API always receives an array of feature objects.
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return array<int, array<string, mixed>>
      */
     public function getFeaturesAttribute($value): array
@@ -88,13 +92,13 @@ class Plan extends Model
     /**
      * Store features as JSON for consistent retrieval.
      *
-     * @param mixed $value
-     * @return void
+     * @param  mixed  $value
      */
     public function setFeaturesAttribute($value): void
     {
         if (is_string($value)) {
             $this->attributes['features'] = $value;
+
             return;
         }
 
@@ -102,7 +106,7 @@ class Plan extends Model
     }
 
     /**
-     * @param array<int, mixed> $features
+     * @param  array<int, mixed>  $features
      * @return array<int, array<string, mixed>>
      */
     private function normalizeFeaturesArray(array $features): array

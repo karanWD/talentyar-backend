@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\ItemController;
-use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ActivityFieldController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EvaluationController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\MediaController;
@@ -25,14 +25,14 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
-require __DIR__ . '/admin.php';
+require __DIR__.'/admin.php';
 
 Route::prefix('v1')->name('v1.')->group(function () {
-//    Route::prefix('admin')->name('admin.')->group(function () {
-//        Route::prefix('auth')->name('auth.')->group(function () {
-//            Route::post('/login', [AdminAuthController::class, 'login'])->name('login');
-//        });
-//    });
+    //    Route::prefix('admin')->name('admin.')->group(function () {
+    //        Route::prefix('auth')->name('auth.')->group(function () {
+    //            Route::post('/login', [AdminAuthController::class, 'login'])->name('login');
+    //        });
+    //    });
 
     // Public routes
     Route::prefix('user')->name('user.')->group(function () {
@@ -41,7 +41,6 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/login', [AuthController::class, 'verifyOtp'])->name('otp.verify');
         });
     });
-
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('user')->name('user.')->group(function () {
@@ -55,7 +54,6 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/referral-code/use', [AuthController::class, 'useReferralCode'])->name('use.referral-code');
             Route::post('/profile', [AuthController::class, 'updateProfile'])->name('update.profile');
             Route::post('/profile/avatar', [AuthController::class, 'updateProfileAvatar'])->name('update.profile.avatar');
-
 
             Route::post('/username/check', [AuthController::class, 'checkUsername'])
                 ->middleware('throttle:20,1')
@@ -100,6 +98,10 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('/evaluations/months', [EvaluationController::class, 'months'])->name('evaluations.months');
             Route::post('/evaluations/media', [EvaluationController::class, 'upload'])->name('evaluations.upload');
             Route::post('/evaluations/store', [EvaluationController::class, 'store'])->name('evaluations.store');
+            Route::get('/evaluations/re-evaluation/price', [EvaluationController::class, 'reEvaluationPrice'])
+                ->name('evaluations.re-evaluation.price');
+            Route::post('/evaluations/re-evaluation/purchase', [EvaluationController::class, 'purchaseReEvaluation'])
+                ->name('evaluations.re-evaluation.purchase');
 
             Route::get('/users/{username}', [UserController::class, 'showByUsername'])->name('users.show');
 
@@ -107,7 +109,6 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('/subscription', [SubscriptionController::class, 'getActiveSubscription'])->name('subscription.active');
         });
     });
-
 
     Route::prefix('public')->name('public.')->group(function () {
         Route::get('/provinces', [PublicController::class, 'getProvinces'])->name('provinces');

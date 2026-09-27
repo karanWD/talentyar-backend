@@ -49,7 +49,6 @@ class StorePostRequest extends FormRequest
                 },
             ],
             'thumbnail_hash' => [
-                'exclude_unless:type,'.Post::TYPE_VIDEO,
                 'nullable',
                 'string',
                 function (string $attribute, mixed $value, \Closure $fail) {

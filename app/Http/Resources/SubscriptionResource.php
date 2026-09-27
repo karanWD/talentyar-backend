@@ -24,6 +24,7 @@ class SubscriptionResource extends BaseResource
             'expires_at' => $this->expires_at,
             'cancelled_at' => $this->cancelled_at,
             'payment_reference' => $this->payment_reference,
+            're_evaluation_credits' => $this->re_evaluation_credits,
             // Merge in the timestamps, if any
         ];
     }

@@ -18,6 +18,7 @@ class Subscription extends Model
         'expires_at',
         'cancelled_at',
         'payment_reference',
+        're_evaluation_credits',
     ];
 
     const STATUS_PENDING = 'pending';
@@ -43,6 +44,7 @@ class Subscription extends Model
             'started_at' => 'datetime',
             'expires_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            're_evaluation_credits' => 'integer',
         ];
     }
 

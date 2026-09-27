@@ -27,10 +27,12 @@ class Transaction extends Model
     const PAYMENT_WALLET = 'payment_wallet';
     const PAYMENT_SUBSCRIPTION = 'payment_subscription';
     const PAYMENT_SUBSCRIPTION_EXTENDED = 'payment_subscription_extended';
+    const PAYMENT_RE_EVALUATION = 'payment_re_evaluation';
     const PAYMENT = [
         self::PAYMENT_WALLET,
         self::PAYMENT_SUBSCRIPTION,
         self::PAYMENT_SUBSCRIPTION_EXTENDED,
+        self::PAYMENT_RE_EVALUATION,
     ];
 
     protected $fillable = [

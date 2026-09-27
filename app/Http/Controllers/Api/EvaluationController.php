@@ -10,9 +10,13 @@ use App\Models\Evaluation;
 use App\Models\Media;
 use App\Models\Post;
 use App\Models\Subscription;
+use App\Models\Transaction;
+use App\Models\Wallet;
+use App\Services\BitpayPaymentService;
 use App\Services\MediaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Morilog\Jalali\Jalalian;
 
 class EvaluationController extends BaseApiController
@@ -87,6 +91,9 @@ class EvaluationController extends BaseApiController
                     'evaluation' => $hasEvaluation
                         ? new EvaluationResource($evaluations->get($monthKey)->first())
                         : null,
+                    'evaluations' => $hasEvaluation
+                        ? EvaluationResource::collection($evaluations->get($monthKey))->resolve()
+                        : [],
                 ];
             })
             ->values();
@@ -128,51 +135,157 @@ class EvaluationController extends BaseApiController
             'activity_fields_id' => ['required', 'integer', 'exists:activity_fields,id'],
         ]);
 
+        return DB::transaction(function () use ($request, $validated): JsonResponse {
+
+            $user = $request->user();
+            $uploadAvailability = $this->getUploadAvailability(
+                $user->id,
+                $validated['activity_fields_id']
+            );
+
+            if (! $uploadAvailability['can_upload']) {
+                return $this->errorResponse($uploadAvailability['message'], 422);
+            }
+
+            $evaluation = Evaluation::create([
+                'user_id' => $user->id,
+                'activity_fields_id' => $validated['activity_fields_id'],
+                'analyzer_status' => Evaluation::ANALYZER_STATUS_PENDING,
+            ]);
+
+            $videoMedia = Media::where('hash', $validated['video_hash'])->firstOrFail();
+            $evaluation->assignMedia($videoMedia, 'video');
+
+            $post = Post::create([
+                'user_id' => $user->id,
+                'activity_fields_id' => $validated['activity_fields_id'],
+                'evaluation_id' => $evaluation->id,
+                'caption' => ' ',
+                'state' => Post::STATE_DRAFT,
+            ]);
+
+            $postMedia = $videoMedia->replicate([
+                'entity_id',
+                'entity_type',
+            ]);
+
+            $postMedia->entity_id = $post->id;
+            $postMedia->entity_type = get_class($post);
+            $postMedia->save();
+
+            if ($uploadAvailability['uses_re_evaluation_credit']) {
+                $uploadAvailability['subscription']->decrement('re_evaluation_credits');
+            }
+
+            AnalyzeEvaluationVideo::dispatch($evaluation->id)->afterCommit();
+
+            $evaluation->load('media');
+
+            return $this->successResponse(
+                ['post' => new EvaluationResource($evaluation)],
+                'Evaluation created successfully',
+                201
+            );
+        });
+    }
+
+    public function purchaseReEvaluation(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'activity_fields_id' => ['required', 'integer', 'exists:activity_fields,id'],
+        ]);
+
         $user = $request->user();
-        $uploadAvailability = $this->getUploadAvailability(
-            $user->id,
+        $subscription = $this->getActiveSubscription($user->id, $validated['activity_fields_id']);
+
+        if ($subscription === null) {
+            return $this->errorResponse('User does not have an active subscription', 422);
+        }
+
+        if ($this->getSubscriptionEvaluationCount($subscription) === 0) {
+            return $this->errorResponse('User has no evaluation to re-evaluate', 422);
+        }
+
+        $amount = (int) $subscription->plan?->re_evaluation_price;
+
+        if ($amount <= 0) {
+            return $this->errorResponse('Re-evaluation price is not configured', 500);
+        }
+
+        $wallet = Wallet::query()->firstOrCreate([
+            'entity_type' => $user->getMorphClass(),
+            'entity_id' => $user->id,
+        ], [
+            'balance' => 0,
+            'currency' => 'IRR',
+        ]);
+
+        $transaction = Transaction::query()->create([
+            'wallet_id' => $wallet->id,
+            'user_id' => $user->id,
+            'payment' => Transaction::PAYMENT_RE_EVALUATION,
+            'type' => Transaction::TYPE_IN,
+            'status' => Transaction::STATUS_PENDING,
+            'amount' => $amount,
+            'currency' => $wallet->currency ?? 'IRR',
+            'description' => 'Re-evaluation purchase',
+            'subscription_id' => $subscription->id,
+        ]);
+
+        $payment = (new BitpayPaymentService)->requestPayment(
+            $amount,
+            'https://api.talentyar.com/api/v1/callback',
+            $transaction->id,
+            $user->phone,
+            $user->username,
+            'Re-evaluation purchase'
+        );
+
+        $transaction->update([
+            'meta_data' => [
+                'id_get' => $payment['id_get'] ?? null,
+                'raw' => $payment['raw'] ?? null,
+            ],
+        ]);
+
+        $url = $payment['gateway_url'] ?? null;
+
+        if ($url === null) {
+            return $this->errorResponse('payment gateway down!', 400);
+        }
+
+        return $this->successResponse([
+            'url' => $url,
+            'amount' => $amount,
+            'currency' => 'TOMAN',
+        ], 'go to payment gate');
+    }
+
+    public function reEvaluationPrice(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'activity_fields_id' => ['required', 'integer', 'exists:activity_fields,id'],
+        ]);
+
+        $subscription = $this->getActiveSubscription(
+            $request->user()->id,
             $validated['activity_fields_id']
         );
 
-        if (! $uploadAvailability['can_upload']) {
-            return $this->errorResponse($uploadAvailability['message'], 422);
+        if ($subscription === null) {
+            return $this->errorResponse('User does not have an active subscription', 422);
         }
 
-        $evaluation = Evaluation::create([
-            'user_id' => $user->id,
-            'activity_fields_id' => $validated['activity_fields_id'],
-            'analyzer_status' => Evaluation::ANALYZER_STATUS_PENDING,
-        ]);
+        $price = (int) $subscription->plan?->re_evaluation_price;
 
-        $videoMedia = Media::where('hash', $validated['video_hash'])->firstOrFail();
-        $evaluation->assignMedia($videoMedia, 'video');
+        if ($price <= 0) {
+            return $this->errorResponse('Re-evaluation price is not configured', 500);
+        }
 
-        $post = Post::create([
-            'user_id' => $user->id,
-            'activity_fields_id' => $validated['activity_fields_id'],
-            'evaluation_id' => $evaluation->id,
-            'caption' => ' ',
-            'state' => Post::STATE_DRAFT,
-        ]);
-
-        $postMedia = $videoMedia->replicate([
-            'entity_id',
-            'entity_type',
-        ]);
-
-        $postMedia->entity_id = $post->id;
-        $postMedia->entity_type = get_class($post);
-        $postMedia->save();
-
-        AnalyzeEvaluationVideo::dispatch($evaluation->id)->afterCommit();
-
-        $evaluation->load('media');
-
-        return $this->successResponse(
-            ['post' => new EvaluationResource($evaluation)],
-            'Evaluation created successfully',
-            201
-        );
+        return $this->successResponse([
+            'price' => $price,
+            'currency' => 'TOMAN',
+        ], 'Re-evaluation price retrieved successfully');
     }
 
     /**
@@ -294,7 +407,12 @@ class EvaluationController extends BaseApiController
     }
 
     /**
-     * @return array{can_upload: bool, message: string}
+     * @return array{
+     *     can_upload: bool,
+     *     message: string,
+     *     subscription?: Subscription,
+     *     uses_re_evaluation_credit?: bool
+     * }
      */
     private function getUploadAvailability(int $userId, int $activityFieldId): array
     {
@@ -307,7 +425,11 @@ class EvaluationController extends BaseApiController
             ];
         }
 
-        if ($this->getSubscriptionEvaluation($subscription) !== null) {
+        $subscription = Subscription::query()->lockForUpdate()->findOrFail($subscription->id);
+
+        $hasEvaluation = $this->getSubscriptionEvaluation($subscription) !== null;
+
+        if ($hasEvaluation && $subscription->re_evaluation_credits < 1) {
             return [
                 'can_upload' => false,
                 'message' => 'Evaluation already uploaded for this subscription',
@@ -317,6 +439,8 @@ class EvaluationController extends BaseApiController
         return [
             'can_upload' => true,
             'message' => 'Evaluation upload is available',
+            'subscription' => $subscription,
+            'uses_re_evaluation_credit' => $hasEvaluation,
         ];
     }
 
@@ -329,6 +453,16 @@ class EvaluationController extends BaseApiController
             ->where('created_at', '<', $subscription->expires_at)
             ->oldest('created_at')
             ->first();
+    }
+
+    private function getSubscriptionEvaluationCount(Subscription $subscription): int
+    {
+        return Evaluation::query()
+            ->where('user_id', $subscription->user_id)
+            ->where('activity_fields_id', $subscription->activity_field_id)
+            ->where('created_at', '>=', $subscription->started_at)
+            ->where('created_at', '<', $subscription->expires_at)
+            ->count();
     }
 
     private function getExpirationMonthKey(Subscription $subscription): ?string

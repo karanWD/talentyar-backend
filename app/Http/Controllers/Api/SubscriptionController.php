@@ -11,6 +11,7 @@ use App\Services\BitpayPaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SubscriptionController extends BaseApiController
 {
@@ -143,7 +144,8 @@ class SubscriptionController extends BaseApiController
         $user = $transaction->user;
         $plan = $transaction->plan;
 
-        if (! $user || ! $plan) {
+        if (! $user
+            || ($transaction->payment !== Transaction::PAYMENT_RE_EVALUATION && ! $plan)) {
             return $this->paymentResultRedirect('failed');
         }
 
@@ -162,6 +164,34 @@ class SubscriptionController extends BaseApiController
         ]);
 
         if ($response['verified'] == true) {
+
+            if ($transaction->payment === Transaction::PAYMENT_RE_EVALUATION) {
+                return DB::transaction(function () use ($transaction): RedirectResponse {
+                    $lockedTransaction = Transaction::query()
+                        ->lockForUpdate()
+                        ->find($transaction->id);
+
+                    if (! $lockedTransaction
+                        || $lockedTransaction->status !== Transaction::STATUS_PENDING) {
+                        return $this->paymentResultRedirect('failed');
+                    }
+
+                    $subscription = Subscription::query()
+                        ->lockForUpdate()
+                        ->find($lockedTransaction->subscription_id);
+
+                    if (! $subscription) {
+                        return $this->paymentResultRedirect('failed');
+                    }
+
+                    $subscription->increment('re_evaluation_credits');
+                    $lockedTransaction->update([
+                        'status' => Transaction::STATUS_SUCCESS,
+                    ]);
+
+                    return $this->paymentResultRedirect('success');
+                });
+            }
 
             $subscription = $user->subscriptions()->create([
                 'activity_field_id' => $plan->activity_field_id,
