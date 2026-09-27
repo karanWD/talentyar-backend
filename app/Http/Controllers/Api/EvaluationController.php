@@ -88,6 +88,7 @@ class EvaluationController extends BaseApiController
                     'uploaded_before' => ($subscriptionMonthState['uploaded_before'][$monthKey] ?? false)
                         && ! $hasEvaluation,
                     'is_expiration_month' => ($subscriptionMonthState['expiration'][$monthKey] ?? false),
+                    're_evaluation_quote' => $activeSubscription->re_evaluation_credits ?? 0,
                     'evaluation' => $hasEvaluation
                         ? new EvaluationResource($evaluations->get($monthKey)->first())
                         : null,
