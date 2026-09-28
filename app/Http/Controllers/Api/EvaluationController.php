@@ -203,9 +203,9 @@ class EvaluationController extends BaseApiController
             return $this->errorResponse('User does not have an active subscription', 422);
         }
 
-        if ($this->getSubscriptionEvaluationCount($subscription) === 0) {
-            return $this->errorResponse('User has no evaluation to re-evaluate', 422);
-        }
+//        if ($this->getSubscriptionEvaluationCount($subscription) === 0) {
+//            return $this->errorResponse('User has no evaluation to re-evaluate', 422);
+//        }
 
         $amount = (int) $subscription->plan?->re_evaluation_price;
 
