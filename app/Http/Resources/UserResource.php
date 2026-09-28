@@ -2,7 +2,9 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Admin;
 use App\Models\Post;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class UserResource extends BaseResource
@@ -10,12 +12,13 @@ class UserResource extends BaseResource
     /**
      * Get the resource data array.
      *
-     * @param Request $request
      * @return array<string, mixed>
      */
     protected function getResourceData(Request $request): array
     {
-        $is_me = $request->user() ? $request->user()->id === $this->id : false;
+        $authenticatedUser = $request->user();
+        $is_me = $authenticatedUser instanceof User && $authenticatedUser->id === $this->id;
+        $canViewPrivateData = $is_me || $authenticatedUser instanceof Admin;
 
         return [
             'id' => $this->id,
@@ -23,8 +26,8 @@ class UserResource extends BaseResource
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
             'full_name' => trim("{$this->first_name} {$this->last_name}") ?: null,
-            'phone' => $is_me ? $this->phone : null,
-            'email' => $is_me ? $this->email : null,
+            'phone' => $canViewPrivateData ? $this->phone : null,
+            'email' => $canViewPrivateData ? $this->email : null,
             'referral_code' => $this->referral_code,
             'referrals_count' => (int) ($this->referrals_count ?? $this->referrals()->count()),
             'referred_by_user_id' => $this->referred_by_user_id,
@@ -51,9 +54,10 @@ class UserResource extends BaseResource
                 $file = $this->media->where('collection', 'avatar')->first();
                 $fallback = $this->media->first();
                 $media = $file ?? $fallback;
+
                 return $media ? new MinimalMediaResource($media) : null;
             }),
-            'activity_fields' => $is_me ? $this->whenLoaded('activityFields', function () use ($request) {
+            'activity_fields' => $canViewPrivateData ? $this->whenLoaded('activityFields', function () use ($request) {
                 $skillsByFieldId = $this->relationLoaded('activityFieldSkills')
                     ? $this->activityFieldSkills->keyBy('activity_field_id')
                     : collect();
@@ -65,8 +69,8 @@ class UserResource extends BaseResource
                     return $data;
                 })->values()->all();
             }) : null,
-            'subscription' => $is_me ? new SubscriptionResource($this->activeSubscription) : null,
-            'subscriptions' => $is_me ? $this->whenLoaded('activeSubscriptions', function () {
+            'subscription' => $canViewPrivateData ? new SubscriptionResource($this->activeSubscription) : null,
+            'subscriptions' => $canViewPrivateData ? $this->whenLoaded('activeSubscriptions', function () {
                 return SubscriptionResource::collection($this->activeSubscriptions);
             }) : null,
             // Merge in the timestamps, if any
