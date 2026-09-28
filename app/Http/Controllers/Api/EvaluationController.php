@@ -75,7 +75,7 @@ class EvaluationController extends BaseApiController
 
         $months = collect(self::JALALI_MONTHS)
             ->filter(fn (string $name, int $month) => $month <= $lastVisibleMonth)
-            ->map(function (string $name, int $month) use ($evaluations, $subscriptionMonthState, $year) {
+            ->map(function (string $name, int $month) use ($evaluations, $subscriptionMonthState, $year, $activeSubscription) {
                 $monthKey = $this->monthKey(new Jalalian($year, $month, 1));
                 $hasEvaluation = $evaluations->has($monthKey);
 
