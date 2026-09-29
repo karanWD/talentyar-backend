@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Resources\UserFollowResource;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Notifications\InternalNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -123,6 +124,7 @@ class FollowController extends BaseApiController
         }
 
         $currentUser->following()->attach($user->id);
+        $user->notify(InternalNotification::followedBy($currentUser));
 
         return $this->successResponse(
             ['user' => new UserFollowResource($user)],

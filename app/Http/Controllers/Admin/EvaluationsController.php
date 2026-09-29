@@ -9,6 +9,7 @@ use App\Models\Evaluation;
 use App\Models\EvaluationItem;
 use App\Models\Media;
 use App\Models\Post;
+use App\Notifications\InternalNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -101,7 +102,11 @@ class EvaluationsController extends BaseApiController
             'items.*.score' => ['required', 'integer', 'min:0'],
         ]);
 
-        DB::transaction(function () use ($evaluation, $validated) {
+        $newStatus = $validated['status'] ?? Evaluation::status_approved;
+        $shouldNotify = $evaluation->status !== Evaluation::status_approved
+            && $newStatus === Evaluation::status_approved;
+
+        DB::transaction(function () use ($evaluation, $validated, $newStatus) {
             $items = collect($validated['items']);
 
             $evaluation->update([
@@ -110,7 +115,7 @@ class EvaluationsController extends BaseApiController
                 'suggestion' => $validated['suggestion'],
                 'summary' => $validated['summary'],
                 'score' => $validated['score'] ?? round($items->avg('score'), 2),
-                'status' => $validated['status'] ?? Evaluation::status_approved,
+                'status' => $newStatus,
             ]);
 
             $evaluation->items()->delete();
@@ -121,6 +126,10 @@ class EvaluationsController extends BaseApiController
                 'score' => $item['score'],
             ]));
         });
+
+        if ($shouldNotify) {
+            $evaluation->user->notify(InternalNotification::evaluationApproved($evaluation));
+        }
 
         $evaluation->load(['user', 'media', 'items.item']);
 
@@ -143,17 +152,34 @@ class EvaluationsController extends BaseApiController
             'status' => ['required', Rule::in(Evaluation::STATUSES)],
         ]);
 
-        DB::transaction(function () use ($evaluation, $validated): void {
+        $shouldNotifyEvaluation = $evaluation->status !== Evaluation::status_approved
+            && $validated['status'] === Evaluation::status_approved;
+        $publishedPostIds = collect();
+
+        DB::transaction(function () use ($evaluation, $validated, &$publishedPostIds): void {
             $evaluation->update([
                 'status' => $validated['status'],
             ]);
 
             if ($validated['status'] === Evaluation::status_approved) {
+                $publishedPostIds = $evaluation->posts()
+                    ->where('state', '!=', Post::STATE_PUBLISHED)
+                    ->pluck('id');
+
                 $evaluation->posts()->update([
                     'state' => Post::STATE_PUBLISHED,
                 ]);
             }
         });
+
+        if ($shouldNotifyEvaluation) {
+            $evaluation->user->notify(InternalNotification::evaluationApproved($evaluation));
+        }
+
+        Post::query()
+            ->whereIn('id', $publishedPostIds)
+            ->get()
+            ->each(fn (Post $post) => $post->user->notify(InternalNotification::postApproved($post)));
 
         $evaluation->load(['user', 'media', 'items.item']);
 

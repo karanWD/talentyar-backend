@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Resources\PostResource;
 use App\Models\Media;
 use App\Models\Post;
+use App\Notifications\InternalNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -95,7 +96,15 @@ class PostController extends BaseApiController
             'state' => ['required', 'integer', 'in:'.implode(',', Post::STATES)],
         ]);
 
+        $shouldNotify = $post->state !== Post::STATE_PUBLISHED
+            && $validated['state'] === Post::STATE_PUBLISHED;
+
         $post->update(['state' => $validated['state']]);
+
+        if ($shouldNotify) {
+            $post->user->notify(InternalNotification::postApproved($post));
+        }
+
         $post->load(['user', 'media']);
         $post->loadCount(['likes', 'dislikes', 'postViews', 'comments']);
 

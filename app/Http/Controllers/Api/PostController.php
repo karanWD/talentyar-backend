@@ -11,6 +11,7 @@ use App\Models\Media;
 use App\Models\Post;
 use App\Models\PostLike;
 use App\Models\User;
+use App\Notifications\InternalNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -170,13 +171,23 @@ class PostController extends BaseApiController
      */
     public function like(Request $request, Post $post): JsonResponse
     {
+        $user = $request->user();
+        $previousReaction = PostLike::query()
+            ->where('post_id', $post->id)
+            ->where('user_id', $user->id)
+            ->value('type');
+
         PostLike::updateOrCreate(
-            ['post_id' => $post->id, 'user_id' => $request->user()->id],
+            ['post_id' => $post->id, 'user_id' => $user->id],
             ['type' => PostLike::TYPE_LIKE]
         );
 
+        if ($post->user_id !== $user->id && $previousReaction !== PostLike::TYPE_LIKE) {
+            $post->user->notify(InternalNotification::postLiked($post, $user));
+        }
+
         $post->loadCount(['likes', 'dislikes', 'postViews']);
-        $post->load(['postLikes' => fn ($q) => $q->where('user_id', $request->user()->id)]);
+        $post->load(['postLikes' => fn ($q) => $q->where('user_id', $user->id)]);
 
         return $this->successResponse(
             ['post' => new PostResource($post)],
@@ -259,10 +270,15 @@ class PostController extends BaseApiController
      */
     public function storeComment(StoreCommentRequest $request, Post $post): JsonResponse
     {
+        $user = $request->user();
         $comment = $post->comments()->create([
-            'user_id' => $request->user()->id,
+            'user_id' => $user->id,
             'body' => $request->validated('body'),
         ]);
+
+        if ($post->user_id !== $user->id) {
+            $post->user->notify(InternalNotification::postCommented($post, $comment, $user));
+        }
 
         $comment->load('user');
 

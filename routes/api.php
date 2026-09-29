@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EvaluationController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\MediaController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\PublicController;
@@ -54,6 +55,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/referral-code/use', [AuthController::class, 'useReferralCode'])->name('use.referral-code');
             Route::post('/profile', [AuthController::class, 'updateProfile'])->name('update.profile');
             Route::post('/profile/avatar', [AuthController::class, 'updateProfileAvatar'])->name('update.profile.avatar');
+
+            Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+            Route::post('/notifications/read', [NotificationController::class, 'markAllAsRead'])->name('notifications.read');
 
             Route::post('/username/check', [AuthController::class, 'checkUsername'])
                 ->middleware('throttle:20,1')
