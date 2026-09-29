@@ -16,7 +16,6 @@ class NotificationController extends BaseApiController
 
         $user = $request->user();
 
-        $user->unreadNotifications()->update(['read_at' => now()]);
 
         $notifications = $user->notifications()
             ->latest()
