@@ -9,7 +9,6 @@ class UserFollowResource extends BaseResource
     /**
      * Get the resource data array.
      *
-     * @param Request $request
      * @return array<string, mixed>
      */
     protected function getResourceData(Request $request): array
@@ -26,10 +25,11 @@ class UserFollowResource extends BaseResource
 
     protected function resolveAvatar(): ?MinimalMediaResource
     {
-        $items = $this->resource->media;
+        $items = $this->resource->relationLoaded('media')
+            ? $this->resource->getRelation('media')
+            : $this->resource->media()->get();
         $media = $items->where('collection', 'avatar')->first() ?? $items->first();
 
         return $media ? new MinimalMediaResource($media) : null;
     }
 }
-
