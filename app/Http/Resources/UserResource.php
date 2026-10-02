@@ -19,6 +19,12 @@ class UserResource extends BaseResource
         $authenticatedUser = $request->user();
         $is_me = $authenticatedUser instanceof User && $authenticatedUser->id === $this->id;
         $canViewPrivateData = $is_me || $authenticatedUser instanceof Admin;
+        $subscriptions = collect();
+
+        if ($canViewPrivateData) {
+            $this->resource->loadMissing('subscriptions.plan');
+            $subscriptions = $this->subscriptions->sortByDesc('id')->values();
+        }
 
         return [
             'id' => $this->id,
@@ -69,10 +75,12 @@ class UserResource extends BaseResource
                     return $data;
                 })->values()->all();
             }) : null,
-            'subscription' => $canViewPrivateData ? new SubscriptionResource($this->activeSubscription) : null,
-            'subscriptions' => $canViewPrivateData ? $this->whenLoaded('activeSubscriptions', function () {
-                return SubscriptionResource::collection($this->activeSubscriptions);
-            }) : null,
+            'subscription' => $canViewPrivateData && $subscriptions->isNotEmpty()
+                ? new SubscriptionResource($subscriptions->first())
+                : null,
+            'subscriptions' => $canViewPrivateData
+                ? SubscriptionResource::collection($subscriptions)
+                : null,
             // Merge in the timestamps, if any
             ...$this->includeTimestamps(),
         ];

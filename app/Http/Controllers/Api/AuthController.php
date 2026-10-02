@@ -340,6 +340,6 @@ class AuthController extends BaseApiController
 
     protected function loadUserProfileRelations(User $user): User
     {
-        return $user->load(['media', 'activityFields', 'activityFieldSkills', 'activeSubscriptions.plan']);
+        return $user->load(['media', 'activityFields', 'activityFieldSkills', 'subscriptions.plan']);
     }
 }

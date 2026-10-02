@@ -35,7 +35,7 @@ class UserController extends BaseApiController
 
 
         $users = User::query()
-            ->with('activeSubscriptions.plan')
+            ->with('subscriptions.plan')
             ->latest()
             ->when($request->has('subscription_type'),function ($q) use ($request){
                 if($request->get('subscription_type') == 'no') {

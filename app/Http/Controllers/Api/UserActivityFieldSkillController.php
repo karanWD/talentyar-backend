@@ -128,6 +128,6 @@ class UserActivityFieldSkillController extends BaseApiController
 
     protected function loadUserProfileRelations(User $user): void
     {
-        $user->load(['media', 'activityFields', 'activityFieldSkills']);
+        $user->load(['media', 'activityFields', 'activityFieldSkills', 'subscriptions.plan']);
     }
 }
