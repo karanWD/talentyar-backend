@@ -41,6 +41,7 @@ class NotificationController extends BaseApiController
             ->get()
             ->keyBy('id');
         $posts = Post::query()
+            ->with('media')
             ->whereKey($postIds)
             ->get()
             ->keyBy('id');

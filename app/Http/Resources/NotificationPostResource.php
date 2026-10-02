@@ -17,6 +17,11 @@ class NotificationPostResource extends BaseResource
             'id' => $this->id,
             'title' => $this->caption,
             'caption' => $this->caption,
+            'thumbnail' => $this->whenLoaded('media', function () {
+                $thumbnail = $this->media->where('collection', 'thumbnail')->first();
+
+                return $thumbnail ? new MinimalMediaResource($thumbnail) : null;
+            }),
         ];
     }
 }
