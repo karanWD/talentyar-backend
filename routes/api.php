@@ -57,7 +57,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/profile/avatar', [AuthController::class, 'updateProfileAvatar'])->name('update.profile.avatar');
 
             Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-            Route::post('/notifications/read', [NotificationController::class, 'markAllAsRead'])->name('notifications.read');
+            Route::post('/notifications/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
 
             Route::post('/username/check', [AuthController::class, 'checkUsername'])
                 ->middleware('throttle:20,1')

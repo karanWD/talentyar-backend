@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\NotificationCategory;
 use App\Http\Resources\NotificationResource;
 use App\Models\Post;
 use App\Models\User;
@@ -68,11 +69,25 @@ class NotificationController extends BaseApiController
         );
     }
 
-    public function markAllAsRead(Request $request): JsonResponse
+    public function markAsRead(Request $request): JsonResponse
     {
-        $updated = $request->user()
-            ->unreadNotifications()
-            ->update(['read_at' => now()]);
+        $validated = $request->validate([
+            'notification_id' => ['sometimes', 'required', 'uuid'],
+        ]);
+
+        $notifications = $request->user()->unreadNotifications();
+
+        if (isset($validated['notification_id'])) {
+            $notifications->whereKey($validated['notification_id']);
+        } else {
+            $notifications->where(
+                'data->category',
+                '!=',
+                NotificationCategory::EVALUATION_APPROVED->value
+            );
+        }
+
+        $updated = $notifications->update(['read_at' => now()]);
 
         return $this->successResponse(
             ['updated_count' => $updated],
