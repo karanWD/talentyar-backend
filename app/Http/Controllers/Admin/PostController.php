@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Resources\PostResource;
+use App\Models\Admin;
 use App\Models\Media;
 use App\Models\Post;
 use App\Notifications\InternalNotification;
+use App\Services\AdminPermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,10 +17,12 @@ use RuntimeException;
 
 class PostController extends BaseApiController
 {
+    public function __construct(private readonly AdminPermissionService $permissions) {}
+
     private function authorizeOrFail(Request $request, string $permission): ?JsonResponse
     {
         $admin = $request->user('api-admin');
-        if (! $admin || ! $admin->can($permission)) {
+        if (! $admin instanceof Admin || ! $this->permissions->can($admin, $permission)) {
             return $this->errorResponse('Forbidden', 403);
         }
 

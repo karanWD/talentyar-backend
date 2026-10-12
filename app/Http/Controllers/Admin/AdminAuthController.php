@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Api\BaseApiController;
 use App\Models\Admin;
+use App\Services\AdminPermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class AdminAuthController extends BaseApiController
 {
+    public function __construct(private readonly AdminPermissionService $permissions) {}
+
     /**
      * Login admin and issue sanctum token.
      */
@@ -25,7 +28,7 @@ class AdminAuthController extends BaseApiController
             ->where('status', 'active')
             ->first();
 
-        if (!$admin || !Hash::check($validated['password'], $admin->password)) {
+        if (! $admin || ! Hash::check($validated['password'], $admin->password)) {
             return $this->errorResponse('Invalid credentials', 401);
         }
 
@@ -45,6 +48,8 @@ class AdminAuthController extends BaseApiController
                     'phone' => $admin->phone,
                     'status' => $admin->status,
                     'roles' => $admin->getRoleNames()->values(),
+                    'permissions' => $this->permissions->names($admin),
+                    'abilities' => $this->permissions->abilities($admin),
                 ],
             ],
             'Login successful'
@@ -67,6 +72,8 @@ class AdminAuthController extends BaseApiController
                     'phone' => $admin->phone,
                     'status' => $admin->status,
                     'roles' => $admin->getRoleNames()->values(),
+                    'permissions' => $this->permissions->names($admin),
+                    'abilities' => $this->permissions->abilities($admin),
                 ],
             ],
             'Profile retrieved successfully'
