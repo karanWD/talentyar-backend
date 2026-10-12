@@ -2,15 +2,51 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Admin;
 use App\Models\User;
+use App\Services\AdminFieldPermissionService;
+use App\Services\AdminPermissionService;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\Rule;
 
 class UpdateUserRequest extends FormRequest
 {
+    /** @var list<string> */
+    private array $forbiddenFields = [];
+
     public function authorize(): bool
     {
-        return true;
+        $admin = $this->user('api-admin');
+
+        if (! $admin instanceof Admin || ! app(AdminPermissionService::class)->can($admin, 'update-users')) {
+            return false;
+        }
+
+        $this->forbiddenFields = app(AdminFieldPermissionService::class)->forbiddenFields(
+            $admin,
+            'users',
+            array_keys($this->all()),
+            'update'
+        );
+
+        return $this->forbiddenFields === [];
+    }
+
+    protected function failedAuthorization(): void
+    {
+        $hasForbiddenFields = $this->forbiddenFields !== [];
+
+        throw new HttpResponseException(response()->json([
+            'success' => false,
+            'message' => $hasForbiddenFields
+                ? 'You are not allowed to update some fields.'
+                : 'Forbidden',
+            'data' => null,
+            ...($hasForbiddenFields ? [
+                'errors' => ['forbidden_fields' => $this->forbiddenFields],
+            ] : []),
+        ], 403));
     }
 
     /**
@@ -34,13 +70,13 @@ class UpdateUserRequest extends FormRequest
             'username' => ['sometimes', 'nullable', 'string', 'max:255', Rule::unique('users', 'username')->ignore($user->id)],
             'province_id' => ['sometimes', 'nullable', 'integer', 'exists:provinces,id'],
             'city_id' => ['sometimes', 'nullable', 'integer', 'exists:cities,id'],
-            'gender' => ['sometimes', 'nullable', 'integer', 'in:' . implode(',', User::GENDERS)],
+            'gender' => ['sometimes', 'nullable', 'integer', 'in:'.implode(',', User::GENDERS)],
             'birth_date' => ['sometimes', 'nullable', 'string', 'date'],
             'weight' => ['sometimes', 'nullable', 'integer', 'min:0'],
             'height' => ['sometimes', 'nullable', 'integer', 'min:0'],
-            'foot_specialization' => ['sometimes', 'nullable', 'string', 'in:' . implode(',', User::FOOT_SPECIALIZATION)],
-            'post_skill' => ['sometimes', 'nullable', 'string', 'in:' . implode(',', User::POST_SKILL)],
-            'skill_level' => ['sometimes', 'nullable', 'string', 'in:' . implode(',', User::SKILL_LEVEL)],
+            'foot_specialization' => ['sometimes', 'nullable', 'string', 'in:'.implode(',', User::FOOT_SPECIALIZATION)],
+            'post_skill' => ['sometimes', 'nullable', 'string', 'in:'.implode(',', User::POST_SKILL)],
+            'skill_level' => ['sometimes', 'nullable', 'string', 'in:'.implode(',', User::SKILL_LEVEL)],
             'activity_history' => ['sometimes', 'nullable', 'boolean'],
             'team_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'favorite_iranian_team' => ['sometimes', 'nullable', 'string', 'max:255'],

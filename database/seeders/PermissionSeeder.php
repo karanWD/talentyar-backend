@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Permission;
+use App\Services\AdminPermissionRegistry;
 use Illuminate\Database\Seeder;
 
 class PermissionSeeder extends Seeder
@@ -12,38 +13,7 @@ class PermissionSeeder extends Seeder
      */
     public function run(): void
     {
-        $permissions = [
-            // دسته‌بندی‌ها
-            'create-users',
-            'read-users',
-            'update-users',
-            'delete-users',
-
-            // ادمین‌ها
-            'create-admins',
-            'read-admins',
-            'update-admins',
-            'delete-admins',
-
-            'create-roles',
-            'read-roles',
-            'update-roles',
-            'delete-roles',
-
-            // API admin ACL
-            'read-permissions',
-
-            // پست‌ها
-            'read-posts',
-            'update-posts',
-            'delete-posts',
-
-            'read-evaluation',
-            'update-evaluation',
-            'delete-evaluation',
-
-            'read-items',
-        ];
+        $permissions = app(AdminPermissionRegistry::class)->permissionNames();
 
         foreach ($permissions as $permission) {
             Permission::firstOrCreate([

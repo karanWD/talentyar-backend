@@ -3,16 +3,26 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Api\BaseApiController;
+use App\Models\Admin;
 use App\Models\Role;
+use App\Services\AdminPermissionRegistry;
+use App\Services\AdminPermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class AdminRoleController extends BaseApiController
 {
+    public function __construct(
+        private readonly AdminPermissionRegistry $registry,
+        private readonly AdminPermissionService $permissions,
+    ) {}
+
     private function authorizeOrFail(Request $request, string $permission): ?JsonResponse
     {
         $admin = $request->user('api-admin');
-        if (! $admin || ! $admin->can($permission)) {
+        if (! $admin instanceof Admin || ! $this->permissions->can($admin, $permission)) {
             return $this->errorResponse('Forbidden', 403);
         }
 
@@ -25,7 +35,10 @@ class AdminRoleController extends BaseApiController
             return $error;
         }
 
-        $roles = Role::query()->with('permissions:id,name')->paginate($request->integer('per_page', 15));
+        $roles = Role::query()
+            ->where('guard_name', $this->registry->guard())
+            ->with('permissions:id,name')
+            ->paginate($request->integer('per_page', 15));
 
         return $this->successResponse(
             array_merge(
@@ -43,18 +56,31 @@ class AdminRoleController extends BaseApiController
         }
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:roles,name'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('roles', 'name')->where('guard_name', $this->registry->guard()),
+            ],
             'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['string', 'exists:permissions,name'],
+            'permissions.*' => [
+                'string',
+                'distinct',
+                Rule::exists('permissions', 'name')->where('guard_name', $this->registry->guard()),
+            ],
             'status' => ['nullable', 'in:active,inactive'],
         ]);
 
-        $role = Role::create([
-            'name' => $validated['name'],
-            'guard_name' => 'api-admin',
-            'status' => $validated['status'] ?? 'active',
-        ]);
-        $role->syncPermissions($validated['permissions'] ?? []);
+        $role = DB::transaction(function () use ($validated): Role {
+            $role = Role::create([
+                'name' => $validated['name'],
+                'guard_name' => $this->registry->guard(),
+                'status' => $validated['status'] ?? 'active',
+            ]);
+            $role->syncPermissions($this->registry->expandDependencies($validated['permissions'] ?? []));
+
+            return $role;
+        });
 
         return $this->successResponse(['role' => $role->load('permissions:id,name')], 'Role created successfully', 201);
     }
@@ -63,6 +89,10 @@ class AdminRoleController extends BaseApiController
     {
         if ($error = $this->authorizeOrFail($request, 'read-roles')) {
             return $error;
+        }
+
+        if ($role->guard_name !== $this->registry->guard()) {
+            abort(404);
         }
 
         return $this->successResponse(['role' => $role->load('permissions:id,name')], 'Role retrieved successfully');
@@ -74,21 +104,42 @@ class AdminRoleController extends BaseApiController
             return $error;
         }
 
+        if ($role->guard_name !== $this->registry->guard()) {
+            abort(404);
+        }
+
+        if (strcasecmp($role->name, 'SuperAdmin') === 0) {
+            return $this->errorResponse('SuperAdmin role cannot be updated', 422);
+        }
+
         $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255', 'unique:roles,name,' . $role->id],
+            'name' => [
+                'sometimes',
+                'string',
+                'max:255',
+                Rule::unique('roles', 'name')
+                    ->where('guard_name', $this->registry->guard())
+                    ->ignore($role->id),
+            ],
             'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['string', 'exists:permissions,name'],
+            'permissions.*' => [
+                'string',
+                'distinct',
+                Rule::exists('permissions', 'name')->where('guard_name', $this->registry->guard()),
+            ],
             'status' => ['nullable', 'in:active,inactive'],
         ]);
 
-        $role->update([
-            'name' => $validated['name'] ?? $role->name,
-            'status' => $validated['status'] ?? $role->status,
-        ]);
+        DB::transaction(function () use ($role, $validated): void {
+            $role->update([
+                'name' => $validated['name'] ?? $role->name,
+                'status' => $validated['status'] ?? $role->status,
+            ]);
 
-        if (array_key_exists('permissions', $validated)) {
-            $role->syncPermissions($validated['permissions'] ?? []);
-        }
+            if (array_key_exists('permissions', $validated)) {
+                $role->syncPermissions($this->registry->expandDependencies($validated['permissions'] ?? []));
+            }
+        });
 
         return $this->successResponse(['role' => $role->load('permissions:id,name')], 'Role updated successfully');
     }
@@ -97,6 +148,10 @@ class AdminRoleController extends BaseApiController
     {
         if ($error = $this->authorizeOrFail($request, 'delete-roles')) {
             return $error;
+        }
+
+        if ($role->guard_name !== $this->registry->guard()) {
+            abort(404);
         }
 
         if (strtolower($role->name) === 'superadmin') {

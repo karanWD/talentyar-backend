@@ -3,24 +3,29 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Api\BaseApiController;
-use App\Http\Resources\AdminReferralCodeResource;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
+use App\Http\Resources\AdminReferralCodeResource;
 use App\Http\Resources\PostResource;
 use App\Http\Resources\UserResource;
+use App\Models\Admin;
 use App\Models\Evaluation;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\AdminFieldPermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class UserController extends BaseApiController
 {
-    private function authorizeOrFail(Request $request, string $permission): ?JsonResponse
+    public function __construct(private readonly AdminFieldPermissionService $fieldPermissions) {}
+
+    private function authorizeOrFail(Request $request, string $ability, User|string $subject): ?JsonResponse
     {
         $admin = $request->user('api-admin');
-        if (! $admin || ! $admin->can($permission)) {
+        if (! $admin instanceof Admin || ! Gate::forUser($admin)->allows($ability, $subject)) {
             return $this->errorResponse('Forbidden', 403);
         }
 
@@ -29,22 +34,33 @@ class UserController extends BaseApiController
 
     public function index(Request $request): JsonResponse
     {
-        if ($error = $this->authorizeOrFail($request, 'read-users')) {
+        if ($error = $this->authorizeOrFail($request, 'viewAny', User::class)) {
             return $error;
         }
 
+        /** @var Admin $admin */
+        $admin = $request->user('api-admin');
+        $canViewSubscription = $this->fieldPermissions->canView($admin, 'users', 'subscription');
+
+        if ($request->has('subscription_type') && ! $canViewSubscription) {
+            return $this->errorResponse(
+                'You are not allowed to filter by subscription.',
+                403,
+                ['forbidden_fields' => ['subscription']]
+            );
+        }
 
         $users = User::query()
-            ->with('subscriptions.plan')
+            ->when($canViewSubscription, fn ($query) => $query->with('subscriptions.plan'))
             ->latest()
-            ->when($request->has('subscription_type'),function ($q) use ($request){
-                if($request->get('subscription_type') == 'no') {
+            ->when($request->has('subscription_type'), function ($q) use ($request) {
+                if ($request->get('subscription_type') == 'no') {
                     // where does not have active subscription
                     $q->doesntHave('activeSubscription');
-                }else {
-                    $q->whereHas('activeSubscription',function ($q) use ($request){
-                        $q->whereHas('plan',function ($q) use ($request){
-                            $q->where('type',$request->get('subscription_type'));
+                } else {
+                    $q->whereHas('activeSubscription', function ($q) use ($request) {
+                        $q->whereHas('plan', function ($q) use ($request) {
+                            $q->where('type', $request->get('subscription_type'));
                         });
                     });
                 }
@@ -62,22 +78,38 @@ class UserController extends BaseApiController
 
     public function referralCodes(Request $request): JsonResponse
     {
-        if ($error = $this->authorizeOrFail($request, 'read-users')) {
+        if ($error = $this->authorizeOrFail($request, 'viewAny', User::class)) {
             return $error;
         }
+
+        /** @var Admin $admin */
+        $admin = $request->user('api-admin');
+
+        if (! $this->fieldPermissions->canView($admin, 'users', 'referral_code')) {
+            return $this->errorResponse(
+                'You are not allowed to view referral codes.',
+                403,
+                ['forbidden_fields' => ['referral_code']]
+            );
+        }
+
+        $canViewPhone = $this->fieldPermissions->canView($admin, 'users', 'phone');
 
         $referralCodes = User::query()
             ->whereNotNull('referral_code')
             ->withCount('referrals')
-            ->when($request->filled('search'), function ($query) use ($request): void {
+            ->when($request->filled('search'), function ($query) use ($request, $canViewPhone): void {
                 $search = $request->string('search')->toString();
 
-                $query->where(function ($nested) use ($search): void {
-                    $nested->where('referral_code', 'like', '%' . $search . '%')
-                        ->orWhere('first_name', 'like', '%' . $search . '%')
-                        ->orWhere('last_name', 'like', '%' . $search . '%')
-                        ->orWhere('username', 'like', '%' . $search . '%')
-                        ->orWhere('phone', 'like', '%' . $search . '%');
+                $query->where(function ($nested) use ($search, $canViewPhone): void {
+                    $nested->where('referral_code', 'like', '%'.$search.'%')
+                        ->orWhere('first_name', 'like', '%'.$search.'%')
+                        ->orWhere('last_name', 'like', '%'.$search.'%')
+                        ->orWhere('username', 'like', '%'.$search.'%');
+
+                    if ($canViewPhone) {
+                        $nested->orWhere('phone', 'like', '%'.$search.'%');
+                    }
                 });
             })
             ->latest()
@@ -95,7 +127,7 @@ class UserController extends BaseApiController
 
     public function store(StoreUserRequest $request): JsonResponse
     {
-        if ($error = $this->authorizeOrFail($request, 'create-users')) {
+        if ($error = $this->authorizeOrFail($request, 'create', User::class)) {
             return $error;
         }
 
@@ -111,11 +143,29 @@ class UserController extends BaseApiController
 
     public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
-        if ($error = $this->authorizeOrFail($request, 'update-users')) {
+        if ($error = $this->authorizeOrFail($request, 'update', $user)) {
             return $error;
         }
 
-        $user->update($request->validated());
+        /** @var Admin $admin */
+        $admin = $request->user('api-admin');
+        $validated = $request->validated();
+        $forbiddenFields = $this->fieldPermissions->forbiddenFields(
+            $admin,
+            'users',
+            array_keys($validated),
+            'update'
+        );
+
+        if ($forbiddenFields !== []) {
+            return $this->errorResponse(
+                'You are not allowed to update some fields.',
+                403,
+                ['forbidden_fields' => $forbiddenFields]
+            );
+        }
+
+        $user->update($validated);
         $user->loadCount(['followers', 'following', 'posts']);
 
         return $this->successResponse(
@@ -126,7 +176,7 @@ class UserController extends BaseApiController
 
     public function show(Request $request, User $user): JsonResponse
     {
-        if ($error = $this->authorizeOrFail($request, 'read-users')) {
+        if ($error = $this->authorizeOrFail($request, 'view', $user)) {
             return $error;
         }
 
@@ -155,7 +205,7 @@ class UserController extends BaseApiController
 
     public function destroy(Request $request, User $user): JsonResponse
     {
-        if ($error = $this->authorizeOrFail($request, 'delete-users')) {
+        if ($error = $this->authorizeOrFail($request, 'delete', $user)) {
             return $error;
         }
 
@@ -196,6 +246,4 @@ class UserController extends BaseApiController
                 }
             });
     }
-
-
 }
