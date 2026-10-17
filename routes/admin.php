@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminPermissionController;
 use App\Http\Controllers\Admin\AdminRoleController;
 use App\Http\Controllers\Admin\EvaluationsController;
@@ -30,6 +31,13 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::put('/roles/{role}', [AdminRoleController::class, 'update'])->name('roles.update');
             Route::delete('/roles/{role}', [AdminRoleController::class, 'destroy'])->name('roles.destroy');
             Route::get('/permissions', [AdminPermissionController::class, 'index'])->name('permissions.index');
+
+            Route::get('/admins', [AdminController::class, 'index'])->name('admins.index');
+            Route::post('/admins', [AdminController::class, 'store'])->name('admins.store');
+            Route::get('/admins/{admin}', [AdminController::class, 'show'])->name('admins.show');
+            Route::put('/admins/{admin}', [AdminController::class, 'update'])->name('admins.update');
+            Route::patch('/admins/{admin}', [AdminController::class, 'update'])->name('admins.patch');
+            Route::delete('/admins/{admin}', [AdminController::class, 'destroy'])->name('admins.destroy');
 
             Route::get('/users', [UserController::class, 'index'])->name('users.index');
             Route::get('/users/referral-codes', [UserController::class, 'referralCodes'])->name('users.referral-codes');
