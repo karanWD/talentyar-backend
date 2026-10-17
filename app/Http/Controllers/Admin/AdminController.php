@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Resources\AdminResource;
 use App\Models\Admin;
+use App\Models\Role;
 use App\Services\AdminPermissionRegistry;
 use App\Services\AdminPermissionService;
 use Illuminate\Http\JsonResponse;
@@ -90,15 +91,15 @@ class AdminController extends BaseApiController
             'roles' => ['nullable', 'array'],
             'roles.*' => [
                 'required',
-                'string',
+                'integer',
                 'distinct',
-                Rule::exists('roles', 'name')->where('guard_name', $this->registry->guard()),
+                Rule::exists('roles', 'id')->where('guard_name', $this->registry->guard()),
             ],
         ]);
 
         /** @var Admin $authenticatedAdmin */
         $authenticatedAdmin = $request->user('api-admin');
-        $roles = $validated['roles'] ?? [];
+        $roles = array_map('intval', $validated['roles'] ?? []);
 
         if ($error = $this->authorizeSuperAdminRoleAssignment($authenticatedAdmin, $roles)) {
             return $error;
@@ -162,13 +163,15 @@ class AdminController extends BaseApiController
             'roles' => ['sometimes', 'nullable', 'array'],
             'roles.*' => [
                 'required',
-                'string',
+                'integer',
                 'distinct',
-                Rule::exists('roles', 'name')->where('guard_name', $this->registry->guard()),
+                Rule::exists('roles', 'id')->where('guard_name', $this->registry->guard()),
             ],
         ]);
 
-        $roles = array_key_exists('roles', $validated) ? ($validated['roles'] ?? []) : null;
+        $roles = array_key_exists('roles', $validated)
+            ? array_map('intval', $validated['roles'] ?? [])
+            : null;
 
         if ($roles !== null && ($error = $this->authorizeSuperAdminRoleAssignment($authenticatedAdmin, $roles))) {
             return $error;
@@ -240,7 +243,7 @@ class AdminController extends BaseApiController
     }
 
     /**
-     * @param  list<string>  $roles
+     * @param  list<int>  $roles
      */
     private function authorizeSuperAdminRoleAssignment(Admin $authenticatedAdmin, array $roles): ?JsonResponse
     {
@@ -252,13 +255,15 @@ class AdminController extends BaseApiController
     }
 
     /**
-     * @param  list<string>  $roles
+     * @param  list<int>  $roles
      */
     private function containsSuperAdminRole(array $roles): bool
     {
-        return collect($roles)->contains(
-            fn (string $role): bool => strcasecmp($role, 'SuperAdmin') === 0
-        );
+        return Role::query()
+            ->whereIn('id', $roles)
+            ->where('guard_name', $this->registry->guard())
+            ->whereRaw('LOWER(name) = ?', ['superadmin'])
+            ->exists();
     }
 
     private function isSuperAdmin(Admin $admin): bool
