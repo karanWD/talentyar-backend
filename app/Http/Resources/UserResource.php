@@ -38,7 +38,7 @@ class UserResource extends BaseResource
                 $allowedActivityFieldIds = $activityFields->ids($authenticatedUser);
                 $this->resource->loadMissing([
                     'subscriptions' => fn ($query) => $activityFields
-                        ->scopeSubscriptions($query, $authenticatedUser)
+                        ->scopeSubscriptions($query->getQuery(), $authenticatedUser)
                         ->with('plan'),
                 ]);
             } else {
