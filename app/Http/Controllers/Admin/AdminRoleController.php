@@ -37,7 +37,7 @@ class AdminRoleController extends BaseApiController
 
         $roles = Role::query()
             ->where('guard_name', $this->registry->guard())
-            ->with('permissions:id,name')
+            ->with(['permissions:id,name', 'activityFields:id,name,slug,tag'])
             ->paginate($request->integer('per_page', 15));
 
         return $this->successResponse(
@@ -68,6 +68,8 @@ class AdminRoleController extends BaseApiController
                 'distinct',
                 Rule::exists('permissions', 'name')->where('guard_name', $this->registry->guard()),
             ],
+            'activity_field_ids' => ['required', 'array', 'min:1'],
+            'activity_field_ids.*' => ['required', 'integer', 'distinct', 'exists:activity_fields,id'],
             'status' => ['nullable', 'in:active,inactive'],
         ]);
 
@@ -78,11 +80,16 @@ class AdminRoleController extends BaseApiController
                 'status' => $validated['status'] ?? 'active',
             ]);
             $role->syncPermissions($this->registry->expandDependencies($validated['permissions'] ?? []));
+            $role->activityFields()->sync($validated['activity_field_ids']);
 
             return $role;
         });
 
-        return $this->successResponse(['role' => $role->load('permissions:id,name')], 'Role created successfully', 201);
+        return $this->successResponse(
+            ['role' => $role->load(['permissions:id,name', 'activityFields:id,name,slug,tag'])],
+            'Role created successfully',
+            201
+        );
     }
 
     public function show(Request $request, Role $role): JsonResponse
@@ -95,7 +102,10 @@ class AdminRoleController extends BaseApiController
             abort(404);
         }
 
-        return $this->successResponse(['role' => $role->load('permissions:id,name')], 'Role retrieved successfully');
+        return $this->successResponse(
+            ['role' => $role->load(['permissions:id,name', 'activityFields:id,name,slug,tag'])],
+            'Role retrieved successfully'
+        );
     }
 
     public function update(Request $request, Role $role): JsonResponse
@@ -127,6 +137,8 @@ class AdminRoleController extends BaseApiController
                 'distinct',
                 Rule::exists('permissions', 'name')->where('guard_name', $this->registry->guard()),
             ],
+            'activity_field_ids' => ['sometimes', 'array', 'min:1'],
+            'activity_field_ids.*' => ['required_with:activity_field_ids', 'integer', 'distinct', 'exists:activity_fields,id'],
             'status' => ['nullable', 'in:active,inactive'],
         ]);
 
@@ -139,9 +151,16 @@ class AdminRoleController extends BaseApiController
             if (array_key_exists('permissions', $validated)) {
                 $role->syncPermissions($this->registry->expandDependencies($validated['permissions'] ?? []));
             }
+
+            if (array_key_exists('activity_field_ids', $validated)) {
+                $role->activityFields()->sync($validated['activity_field_ids']);
+            }
         });
 
-        return $this->successResponse(['role' => $role->load('permissions:id,name')], 'Role updated successfully');
+        return $this->successResponse(
+            ['role' => $role->load(['permissions:id,name', 'activityFields:id,name,slug,tag'])],
+            'Role updated successfully'
+        );
     }
 
     public function destroy(Request $request, Role $role): JsonResponse

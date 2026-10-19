@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\ActivityField;
+use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Database\Seeder;
-use App\Models\Permission;
 
 class RoleSeeder extends Seeder
 {
@@ -21,5 +22,6 @@ class RoleSeeder extends Seeder
             'status' => 'active',
         ]);
         $roleSuperAdmin->syncPermissions($permissions);
+        $roleSuperAdmin->activityFields()->sync(ActivityField::query()->pluck('id'));
     }
 }
