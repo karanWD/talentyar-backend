@@ -5,13 +5,17 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Api\BaseApiController;
 use App\Models\Admin;
 use App\Models\Item;
+use App\Services\AdminActivityFieldService;
 use App\Services\AdminPermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ItemController extends BaseApiController
 {
-    public function __construct(private readonly AdminPermissionService $permissions) {}
+    public function __construct(
+        private readonly AdminPermissionService $permissions,
+        private readonly AdminActivityFieldService $activityFields,
+    ) {}
 
     private function authorizeOrFail(Request $request, string $permission): ?JsonResponse
     {
@@ -29,7 +33,11 @@ class ItemController extends BaseApiController
             return $error;
         }
 
-        $query = Item::query()->orderBy('id');
+        /** @var Admin $admin */
+        $admin = $request->user('api-admin');
+        $query = $this->activityFields
+            ->scopeItems(Item::query(), $admin)
+            ->orderBy('id');
 
         if ($request->filled('activity_field_id')) {
             $query->where('activity_field_id', $request->integer('activity_field_id'));

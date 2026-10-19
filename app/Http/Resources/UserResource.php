@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Models\Admin;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\AdminActivityFieldService;
 use App\Services\AdminFieldPermissionService;
 use Illuminate\Http\Request;
 
@@ -29,10 +30,37 @@ class UserResource extends BaseResource
         $canViewSubscription = $is_me
             || ($isAdmin && $fieldPermissions->canView($authenticatedUser, 'users', 'subscription'));
         $subscriptions = collect();
+        $allowedActivityFieldIds = [];
 
         if ($canViewSubscription) {
-            $this->resource->loadMissing('subscriptions.plan');
-            $subscriptions = $this->subscriptions->sortByDesc('id')->values();
+            if ($isAdmin) {
+                $activityFields = app(AdminActivityFieldService::class);
+                $allowedActivityFieldIds = $activityFields->ids($authenticatedUser);
+                $this->resource->loadMissing([
+                    'subscriptions' => fn ($query) => $activityFields
+                        ->scopeSubscriptions($query, $authenticatedUser)
+                        ->with('plan'),
+                ]);
+            } else {
+                $this->resource->loadMissing('subscriptions.plan');
+            }
+
+            $subscriptions = $this->subscriptions
+                ->when(
+                    $isAdmin,
+                    fn ($items) => $items->whereIn('activity_field_id', $allowedActivityFieldIds)
+                )
+                ->sortByDesc('id')
+                ->values();
+        }
+
+        $postCountQuery = $this->posts()
+            ->getQuery()
+            ->where('state', Post::STATE_PUBLISHED);
+
+        if ($isAdmin) {
+            $postCountQuery = app(AdminActivityFieldService::class)
+                ->scopePosts($postCountQuery, $authenticatedUser);
         }
 
         return [
@@ -72,7 +100,9 @@ class UserResource extends BaseResource
             'bio' => $this->bio,
             'followers_count' => (int) ($this->followers_count ?? $this->followers()->count()),
             'following_count' => (int) ($this->following_count ?? $this->following()->count()),
-            'post_count' => request()->routeIs('v1.user.get.profile') ? $this->posts()->count() : (int) ($this->posts()->where('state', Post::STATE_PUBLISHED)->count()),
+            'post_count' => request()->routeIs('v1.user.get.profile')
+                ? $this->posts()->count()
+                : $postCountQuery->count(),
             'avatar' => $this->whenLoaded('media', function () {
                 $file = $this->media->where('collection', 'avatar')->first();
                 $fallback = $this->media->first();

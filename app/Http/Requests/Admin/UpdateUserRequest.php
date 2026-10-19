@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use App\Models\Admin;
 use App\Models\User;
+use App\Services\AdminActivityFieldService;
 use App\Services\AdminFieldPermissionService;
 use App\Services\AdminPermissionService;
 use Illuminate\Foundation\Http\FormRequest;
@@ -19,7 +20,12 @@ class UpdateUserRequest extends FormRequest
     {
         $admin = $this->user('api-admin');
 
-        if (! $admin instanceof Admin || ! app(AdminPermissionService::class)->can($admin, 'update-users')) {
+        $user = $this->route('user');
+
+        if (! $admin instanceof Admin
+            || ! $user instanceof User
+            || ! app(AdminPermissionService::class)->can($admin, 'update-users')
+            || ! app(AdminActivityFieldService::class)->canAccessUser($admin, $user)) {
             return false;
         }
 

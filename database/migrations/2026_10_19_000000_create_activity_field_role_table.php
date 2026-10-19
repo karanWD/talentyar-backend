@@ -18,9 +18,11 @@ return new class extends Migration
             $table->unique(['activity_field_id', 'role_id']);
         });
 
-        // Existing roles were unrestricted. Associate them with every current
-        // activity field so deploying this migration does not silently revoke access.
-        $roleIds = DB::table('roles')->pluck('id');
+        // Only SuperAdmin starts unrestricted. Other existing roles remain
+        // fail-closed until their activity fields are explicitly configured.
+        $roleIds = DB::table('roles')
+            ->where('name', 'SuperAdmin')
+            ->pluck('id');
         $activityFieldIds = DB::table('activity_fields')->pluck('id');
         $timestamp = now();
 

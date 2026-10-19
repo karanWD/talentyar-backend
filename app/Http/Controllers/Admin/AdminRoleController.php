@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Api\BaseApiController;
 use App\Models\Admin;
 use App\Models\Role;
+use App\Services\AdminActivityFieldService;
 use App\Services\AdminPermissionRegistry;
 use App\Services\AdminPermissionService;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +18,7 @@ class AdminRoleController extends BaseApiController
     public function __construct(
         private readonly AdminPermissionRegistry $registry,
         private readonly AdminPermissionService $permissions,
+        private readonly AdminActivityFieldService $activityFields,
     ) {}
 
     private function authorizeOrFail(Request $request, string $permission): ?JsonResponse
@@ -55,6 +57,9 @@ class AdminRoleController extends BaseApiController
             return $error;
         }
 
+        /** @var Admin $admin */
+        $admin = $request->user('api-admin');
+
         $validated = $request->validate([
             'name' => [
                 'required',
@@ -69,7 +74,12 @@ class AdminRoleController extends BaseApiController
                 Rule::exists('permissions', 'name')->where('guard_name', $this->registry->guard()),
             ],
             'activity_field_ids' => ['required', 'array', 'min:1'],
-            'activity_field_ids.*' => ['required', 'integer', 'distinct', 'exists:activity_fields,id'],
+            'activity_field_ids.*' => [
+                'required',
+                'integer',
+                'distinct',
+                Rule::in($this->activityFields->ids($admin)),
+            ],
             'status' => ['nullable', 'in:active,inactive'],
         ]);
 
@@ -122,6 +132,9 @@ class AdminRoleController extends BaseApiController
             return $this->errorResponse('SuperAdmin role cannot be updated', 422);
         }
 
+        /** @var Admin $admin */
+        $admin = $request->user('api-admin');
+
         $validated = $request->validate([
             'name' => [
                 'sometimes',
@@ -138,7 +151,12 @@ class AdminRoleController extends BaseApiController
                 Rule::exists('permissions', 'name')->where('guard_name', $this->registry->guard()),
             ],
             'activity_field_ids' => ['sometimes', 'array', 'min:1'],
-            'activity_field_ids.*' => ['required_with:activity_field_ids', 'integer', 'distinct', 'exists:activity_fields,id'],
+            'activity_field_ids.*' => [
+                'required_with:activity_field_ids',
+                'integer',
+                'distinct',
+                Rule::in($this->activityFields->ids($admin)),
+            ],
             'status' => ['nullable', 'in:active,inactive'],
         ]);
 

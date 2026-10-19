@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Policies\UserPolicy;
+use App\Services\AdminActivityFieldService;
 use App\Services\AdminFieldPermissionService;
 use App\Services\AdminPermissionRegistry;
 use App\Services\AdminPermissionService;
@@ -21,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(AdminPermissionRegistry::class);
         $this->app->scoped(AdminPermissionService::class);
         $this->app->scoped(AdminFieldPermissionService::class);
+        $this->app->scoped(AdminActivityFieldService::class);
     }
 
     /**

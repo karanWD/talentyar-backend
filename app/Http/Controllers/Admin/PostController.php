@@ -8,6 +8,7 @@ use App\Models\Admin;
 use App\Models\Media;
 use App\Models\Post;
 use App\Notifications\InternalNotification;
+use App\Services\AdminActivityFieldService;
 use App\Services\AdminPermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,12 +18,17 @@ use RuntimeException;
 
 class PostController extends BaseApiController
 {
-    public function __construct(private readonly AdminPermissionService $permissions) {}
+    public function __construct(
+        private readonly AdminPermissionService $permissions,
+        private readonly AdminActivityFieldService $activityFields,
+    ) {}
 
-    private function authorizeOrFail(Request $request, string $permission): ?JsonResponse
+    private function authorizeOrFail(Request $request, string $permission, ?Post $post = null): ?JsonResponse
     {
         $admin = $request->user('api-admin');
-        if (! $admin instanceof Admin || ! $this->permissions->can($admin, $permission)) {
+        if (! $admin instanceof Admin
+            || ! $this->permissions->can($admin, $permission)
+            || ($post instanceof Post && ! $this->activityFields->canAccessPost($admin, $post))) {
             return $this->errorResponse('Forbidden', 403);
         }
 
@@ -38,7 +44,10 @@ class PostController extends BaseApiController
             return $error;
         }
 
-        $query = Post::query()
+        /** @var Admin $admin */
+        $admin = $request->user('api-admin');
+
+        $query = $this->activityFields->scopePosts(Post::query(), $admin)
             ->with(['user', 'media'])
             ->withCount(['likes', 'dislikes', 'postViews', 'comments']);
 
@@ -74,7 +83,7 @@ class PostController extends BaseApiController
      */
     public function show(Request $request, Post $post): JsonResponse
     {
-        if ($error = $this->authorizeOrFail($request, 'read-posts')) {
+        if ($error = $this->authorizeOrFail($request, 'read-posts', $post)) {
             return $error;
         }
 
@@ -92,7 +101,7 @@ class PostController extends BaseApiController
      */
     public function updateState(Request $request, Post $post): JsonResponse
     {
-        if ($error = $this->authorizeOrFail($request, 'update-posts')) {
+        if ($error = $this->authorizeOrFail($request, 'update-posts', $post)) {
             return $error;
         }
 
@@ -123,7 +132,7 @@ class PostController extends BaseApiController
      */
     public function destroy(Request $request, Post $post): JsonResponse
     {
-        if ($error = $this->authorizeOrFail($request, 'delete-posts')) {
+        if ($error = $this->authorizeOrFail($request, 'delete-posts', $post)) {
             return $error;
         }
 

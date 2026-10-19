@@ -12,6 +12,7 @@ use App\Models\Admin;
 use App\Models\Evaluation;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\AdminActivityFieldService;
 use App\Services\AdminFieldPermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,7 +21,10 @@ use Illuminate\Support\Facades\Gate;
 
 class UserController extends BaseApiController
 {
-    public function __construct(private readonly AdminFieldPermissionService $fieldPermissions) {}
+    public function __construct(
+        private readonly AdminFieldPermissionService $fieldPermissions,
+        private readonly AdminActivityFieldService $activityFields,
+    ) {}
 
     private function authorizeOrFail(Request $request, string $ability, User|string $subject): ?JsonResponse
     {
@@ -41,6 +45,7 @@ class UserController extends BaseApiController
         /** @var Admin $admin */
         $admin = $request->user('api-admin');
         $canViewSubscription = $this->fieldPermissions->canView($admin, 'users', 'subscription');
+        $allowedActivityFieldIds = $this->activityFields->ids($admin);
 
         if ($request->has('subscription_type') && ! $canViewSubscription) {
             return $this->errorResponse(
@@ -50,15 +55,23 @@ class UserController extends BaseApiController
             );
         }
 
-        $users = User::query()
-            ->when($canViewSubscription, fn ($query) => $query->with('subscriptions.plan'))
+        $users = $this->activityFields->scopeUsers(User::query(), $admin)
+            ->when($canViewSubscription, fn ($query) => $query->with([
+                'subscriptions' => fn ($subscriptions) => $subscriptions
+                    ->whereIn('activity_field_id', $allowedActivityFieldIds)
+                    ->with('plan'),
+            ]))
             ->latest()
-            ->when($request->has('subscription_type'), function ($q) use ($request) {
+            ->when($request->has('subscription_type'), function ($q) use ($request, $allowedActivityFieldIds) {
                 if ($request->get('subscription_type') == 'no') {
-                    // where does not have active subscription
-                    $q->doesntHave('activeSubscription');
+                    $q->whereDoesntHave(
+                        'activeSubscriptions',
+                        fn ($subscriptions) => $subscriptions
+                            ->whereIn('activity_field_id', $allowedActivityFieldIds)
+                    );
                 } else {
-                    $q->whereHas('activeSubscription', function ($q) use ($request) {
+                    $q->whereHas('activeSubscriptions', function ($q) use ($request, $allowedActivityFieldIds) {
+                        $q->whereIn('activity_field_id', $allowedActivityFieldIds);
                         $q->whereHas('plan', function ($q) use ($request) {
                             $q->where('type', $request->get('subscription_type'));
                         });
@@ -95,7 +108,7 @@ class UserController extends BaseApiController
 
         $canViewPhone = $this->fieldPermissions->canView($admin, 'users', 'phone');
 
-        $referralCodes = User::query()
+        $referralCodes = $this->activityFields->scopeUsers(User::query(), $admin)
             ->whereNotNull('referral_code')
             ->withCount('referrals')
             ->when($request->filled('search'), function ($query) use ($request, $canViewPhone): void {
@@ -131,7 +144,18 @@ class UserController extends BaseApiController
             return $error;
         }
 
-        $user = User::create($request->validated());
+        $validated = $request->validated();
+        $activityFieldIds = $validated['activity_field_ids'];
+        unset($validated['activity_field_ids']);
+
+        $user = DB::transaction(function () use ($validated, $activityFieldIds): User {
+            $user = User::create($validated);
+            $user->activityFields()->sync($activityFieldIds);
+
+            return $user;
+        });
+
+        $user->load('activityFields');
         $user->loadCount(['followers', 'following', 'posts']);
 
         return $this->successResponse(
@@ -183,7 +207,7 @@ class UserController extends BaseApiController
         $user->load('media')->withCount(['followers', 'following', 'posts']);
 
         $perPage = $request->integer('per_page', 15);
-        $posts = $user->posts()
+        $posts = $this->activityFields->scopePosts($user->posts()->getQuery(), $request->user('api-admin'))
             ->withCount(['likes', 'dislikes', 'postViews'])
             ->with(['media'])
             ->latest()
