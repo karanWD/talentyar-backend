@@ -4,8 +4,10 @@ namespace App\Http\Requests\Admin;
 
 use App\Models\Admin;
 use App\Models\User;
+use App\Services\AdminActivityFieldService;
 use App\Services\AdminPermissionService;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreUserRequest extends FormRequest
 {
@@ -22,6 +24,9 @@ class StoreUserRequest extends FormRequest
      */
     public function rules(): array
     {
+        /** @var Admin $admin */
+        $admin = $this->user('api-admin');
+
         return [
             'phone' => ['required', 'string', 'regex:/^09[0-9]{9}$/', 'unique:users,phone'],
             'first_name' => ['nullable', 'string', 'max:255'],
@@ -43,6 +48,13 @@ class StoreUserRequest extends FormRequest
             'favorite_foreign_team' => ['nullable', 'string', 'max:255'],
             'shirt_number' => ['nullable', 'integer', 'min:0'],
             'bio' => ['nullable', 'string'],
+            'activity_field_ids' => ['required', 'array', 'min:1'],
+            'activity_field_ids.*' => [
+                'required',
+                'integer',
+                'distinct',
+                Rule::in(app(AdminActivityFieldService::class)->ids($admin)),
+            ],
         ];
     }
 }

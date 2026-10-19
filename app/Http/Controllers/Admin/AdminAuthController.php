@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Api\BaseApiController;
 use App\Models\Admin;
+use App\Services\AdminActivityFieldService;
 use App\Services\AdminPermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -11,7 +12,10 @@ use Illuminate\Support\Facades\Hash;
 
 class AdminAuthController extends BaseApiController
 {
-    public function __construct(private readonly AdminPermissionService $permissions) {}
+    public function __construct(
+        private readonly AdminPermissionService $permissions,
+        private readonly AdminActivityFieldService $activityFields,
+    ) {}
 
     /**
      * Login admin and issue sanctum token.
@@ -48,6 +52,7 @@ class AdminAuthController extends BaseApiController
                     'phone' => $admin->phone,
                     'status' => $admin->status,
                     'roles' => $admin->getRoleNames()->values(),
+                    'activity_field_ids' => $this->activityFields->ids($admin),
                     'permissions' => $this->permissions->names($admin),
                     'abilities' => $this->permissions->abilities($admin),
                 ],
@@ -72,6 +77,7 @@ class AdminAuthController extends BaseApiController
                     'phone' => $admin->phone,
                     'status' => $admin->status,
                     'roles' => $admin->getRoleNames()->values(),
+                    'activity_field_ids' => $this->activityFields->ids($admin),
                     'permissions' => $this->permissions->names($admin),
                     'abilities' => $this->permissions->abilities($admin),
                 ],

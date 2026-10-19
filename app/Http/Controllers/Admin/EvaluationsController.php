@@ -11,6 +11,7 @@ use App\Models\EvaluationItem;
 use App\Models\Media;
 use App\Models\Post;
 use App\Notifications\InternalNotification;
+use App\Services\AdminActivityFieldService;
 use App\Services\AdminPermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,12 +22,21 @@ use RuntimeException;
 
 class EvaluationsController extends BaseApiController
 {
-    public function __construct(private readonly AdminPermissionService $permissions) {}
+    public function __construct(
+        private readonly AdminPermissionService $permissions,
+        private readonly AdminActivityFieldService $activityFields,
+    ) {}
 
-    private function authorizeOrFail(Request $request, string $permission): ?JsonResponse
-    {
+    private function authorizeOrFail(
+        Request $request,
+        string $permission,
+        ?Evaluation $evaluation = null
+    ): ?JsonResponse {
         $admin = $request->user('api-admin');
-        if (! $admin instanceof Admin || ! $this->permissions->can($admin, $permission)) {
+        if (! $admin instanceof Admin
+            || ! $this->permissions->can($admin, $permission)
+            || ($evaluation instanceof Evaluation
+                && ! $this->activityFields->canAccessEvaluation($admin, $evaluation))) {
             return $this->errorResponse('Forbidden', 403);
         }
 
@@ -42,7 +52,10 @@ class EvaluationsController extends BaseApiController
             return $error;
         }
 
-        $query = Evaluation::query()
+        /** @var Admin $admin */
+        $admin = $request->user('api-admin');
+
+        $query = $this->activityFields->scopeEvaluations(Evaluation::query(), $admin)
             ->with('user')
             ->when($request->has('status'), function ($q) use ($request) {
                 $q->where('status', $request->get('status'));
@@ -72,7 +85,7 @@ class EvaluationsController extends BaseApiController
      */
     public function show(Request $request, Evaluation $evaluation): JsonResponse
     {
-        if ($error = $this->authorizeOrFail($request, 'read-evaluation')) {
+        if ($error = $this->authorizeOrFail($request, 'read-evaluation', $evaluation)) {
             return $error;
         }
 
@@ -89,7 +102,7 @@ class EvaluationsController extends BaseApiController
      */
     public function store(Request $request, Evaluation $evaluation): JsonResponse
     {
-        if ($error = $this->authorizeOrFail($request, 'update-evaluation')) {
+        if ($error = $this->authorizeOrFail($request, 'update-evaluation', $evaluation)) {
             return $error;
         }
 
@@ -101,7 +114,13 @@ class EvaluationsController extends BaseApiController
             'score' => ['nullable', 'numeric', 'min:0'],
             'status' => ['nullable', Rule::in(Evaluation::STATUSES)],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.item_id' => ['required', 'integer', 'distinct', 'exists:items,id'],
+            'items.*.item_id' => [
+                'required',
+                'integer',
+                'distinct',
+                Rule::exists('items', 'id')
+                    ->where('activity_field_id', $evaluation->activity_fields_id),
+            ],
             'items.*.score' => ['required', 'integer', 'min:0'],
         ]);
 
@@ -147,7 +166,7 @@ class EvaluationsController extends BaseApiController
      */
     public function updateStatus(Request $request, Evaluation $evaluation): JsonResponse
     {
-        if ($error = $this->authorizeOrFail($request, 'update-evaluation')) {
+        if ($error = $this->authorizeOrFail($request, 'update-evaluation', $evaluation)) {
             return $error;
         }
 
@@ -158,18 +177,23 @@ class EvaluationsController extends BaseApiController
         $shouldNotifyEvaluation = $evaluation->status !== Evaluation::status_approved
             && $validated['status'] === Evaluation::status_approved;
         $publishedPostIds = collect();
+        /** @var Admin $admin */
+        $admin = $request->user('api-admin');
 
-        DB::transaction(function () use ($evaluation, $validated, &$publishedPostIds): void {
+        DB::transaction(function () use ($evaluation, $validated, $admin, &$publishedPostIds): void {
             $evaluation->update([
                 'status' => $validated['status'],
             ]);
 
             if ($validated['status'] === Evaluation::status_approved) {
-                $publishedPostIds = $evaluation->posts()
+                $posts = $this->activityFields
+                    ->scopePosts($evaluation->posts()->getQuery(), $admin);
+
+                $publishedPostIds = (clone $posts)
                     ->where('state', '!=', Post::STATE_PUBLISHED)
                     ->pluck('id');
 
-                $evaluation->posts()->update([
+                $posts->update([
                     'state' => Post::STATE_PUBLISHED,
                 ]);
             }
@@ -197,7 +221,7 @@ class EvaluationsController extends BaseApiController
      */
     public function updateDetails(Request $request, Evaluation $evaluation): JsonResponse
     {
-        if ($error = $this->authorizeOrFail($request, 'update-evaluation')) {
+        if ($error = $this->authorizeOrFail($request, 'update-evaluation', $evaluation)) {
             return $error;
         }
 
@@ -208,7 +232,13 @@ class EvaluationsController extends BaseApiController
             'suggestion' => ['sometimes', 'nullable', 'string'],
             'summary' => ['sometimes', 'nullable', 'string'],
             'items' => ['sometimes', 'array', 'min:1'],
-            'items.*.item_id' => ['required_with:items', 'integer', 'distinct', 'exists:items,id'],
+            'items.*.item_id' => [
+                'required_with:items',
+                'integer',
+                'distinct',
+                Rule::exists('items', 'id')
+                    ->where('activity_field_id', $evaluation->activity_fields_id),
+            ],
             'items.*.score' => ['required_with:items', 'integer', 'min:0'],
         ]);
 
@@ -251,7 +281,7 @@ class EvaluationsController extends BaseApiController
 
     public function retry(Request $request, Evaluation $evaluation)
     {
-        if ($error = $this->authorizeOrFail($request, 'update-evaluation')) {
+        if ($error = $this->authorizeOrFail($request, 'update-evaluation', $evaluation)) {
             return $error;
         }
 
@@ -273,11 +303,19 @@ class EvaluationsController extends BaseApiController
      */
     public function destroy(Request $request, Evaluation $evaluation): JsonResponse
     {
-        if ($error = $this->authorizeOrFail($request, 'delete-evaluation')) {
+        if ($error = $this->authorizeOrFail($request, 'delete-evaluation', $evaluation)) {
             return $error;
         }
 
-        $evaluation->load(['media', 'posts.media']);
+        /** @var Admin $admin */
+        $admin = $request->user('api-admin');
+        $evaluation->load('media');
+        $posts = $this->activityFields
+            ->scopePosts($evaluation->posts()->getQuery(), $admin)
+            ->with('media')
+            ->get();
+        $postIds = $posts->pluck('id');
+        $evaluation->setRelation('posts', $posts);
 
         $media = $evaluation->media
             ->concat($evaluation->posts->flatMap->media)
@@ -285,7 +323,7 @@ class EvaluationsController extends BaseApiController
             ->values();
         $mediaIds = $media->pluck('id');
 
-        DB::transaction(function () use ($evaluation, $media, $mediaIds): void {
+        DB::transaction(function () use ($evaluation, $media, $mediaIds, $postIds): void {
             foreach ($media->groupBy(fn (Media $item): string => ($item->disk ?: 's3').'|'.$item->path) as $fileMedia) {
                 /** @var Media $file */
                 $file = $fileMedia->first();
@@ -308,7 +346,7 @@ class EvaluationsController extends BaseApiController
                 $item->forceDelete();
             }
 
-            $evaluation->posts()->delete();
+            Post::query()->whereIn('id', $postIds)->delete();
             $evaluation->items()->delete();
             $evaluation->delete();
         });

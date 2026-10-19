@@ -22,6 +22,12 @@ class ActivityField extends Model
             ->withTimestamps();
     }
 
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'activity_field_role')
+            ->withTimestamps();
+    }
+
     public function userActivityFieldSkills(): HasMany
     {
         return $this->hasMany(UserActivityFieldSkill::class);
