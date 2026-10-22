@@ -98,20 +98,21 @@ class AdminActivityFieldService
             )->count();
     }
 
+    /**
+     * Keep unassigned users globally visible; restrict assigned users by field.
+     */
     public function scopeUsers(Builder $query, Admin $admin): Builder
     {
         $ids = $this->ids($admin);
 
         if ($ids === []) {
-            return $query->whereRaw('1 = 0');
+            return $query->whereDoesntHave('activityFields');
         }
 
-        return $query
-            ->whereHas('activityFields')
-            ->whereDoesntHave(
-                'activityFields',
-                fn (Builder $activityFields) => $activityFields->whereNotIn('activity_fields.id', $ids)
-            );
+        return $query->whereDoesntHave(
+            'activityFields',
+            fn (Builder $activityFields) => $activityFields->whereNotIn('activity_fields.id', $ids)
+        );
     }
 
     public function scopePosts(Builder $query, Admin $admin): Builder
