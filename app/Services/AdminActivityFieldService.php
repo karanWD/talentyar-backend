@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Admin;
+use App\Models\Challenge;
 use App\Models\Evaluation;
 use App\Models\Post;
 use App\Models\User;
@@ -98,6 +99,11 @@ class AdminActivityFieldService
             )->count();
     }
 
+    public function canAccessChallenge(Admin $admin, Challenge $challenge): bool
+    {
+        return $this->canAccessActivityField($admin, $challenge->activity_field_id);
+    }
+
     /**
      * Keep unassigned users globally visible; restrict assigned users by field.
      */
@@ -170,5 +176,14 @@ class AdminActivityFieldService
         return $ids === []
             ? $query->whereRaw('1 = 0')
             : $query->whereIn('items.activity_field_id', $ids);
+    }
+
+    public function scopeChallenges(Builder $query, Admin $admin): Builder
+    {
+        $ids = $this->ids($admin);
+
+        return $ids === []
+            ? $query->whereRaw('1 = 0')
+            : $query->whereIn('challenges.activity_field_id', $ids);
     }
 }

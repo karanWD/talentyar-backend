@@ -116,5 +116,14 @@ return [
                 'view' => ['name' => 'read-items', 'label' => 'مشاهده آیتم‌ها'],
             ],
         ],
+        'challenges' => [
+            'label' => 'چالش‌ها',
+            'actions' => [
+                'create' => ['name' => 'create-challenges', 'label' => 'ایجاد چالش'],
+                'view' => ['name' => 'read-challenges', 'label' => 'مشاهده چالش‌ها'],
+                'update' => ['name' => 'update-challenges', 'label' => 'ویرایش چالش'],
+                'delete' => ['name' => 'delete-challenges', 'label' => 'حذف چالش'],
+            ],
+        ],
     ],
 ];

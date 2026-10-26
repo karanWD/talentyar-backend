@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminPermissionController;
 use App\Http\Controllers\Admin\AdminRoleController;
+use App\Http\Controllers\Admin\ChallengeController;
 use App\Http\Controllers\Admin\EvaluationsController;
 use App\Http\Controllers\Admin\ItemController;
 use App\Http\Controllers\Admin\PostController;
@@ -60,6 +61,16 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::delete('/evaluations/{evaluation}', [EvaluationsController::class, 'destroy'])->name('evaluations.destroy');
 
             Route::get('/items', [ItemController::class, 'index'])->name('items.index');
+
+            Route::post('/challenges/video', [ChallengeController::class, 'uploadVideo'])
+                ->name('challenges.video.store');
+            Route::get('/challenges', [ChallengeController::class, 'index'])->name('challenges.index');
+            Route::post('/challenges', [ChallengeController::class, 'store'])->name('challenges.store');
+            Route::get('/challenges/{challenge}', [ChallengeController::class, 'show'])->name('challenges.show');
+            Route::match(['put', 'patch'], '/challenges/{challenge}', [ChallengeController::class, 'update'])
+                ->name('challenges.update');
+            Route::delete('/challenges/{challenge}', [ChallengeController::class, 'destroy'])
+                ->name('challenges.destroy');
         });
     });
 });

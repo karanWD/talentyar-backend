@@ -48,6 +48,11 @@ class ActivityField extends Model
         return $this->hasMany(Item::class);
     }
 
+    public function challenges(): HasMany
+    {
+        return $this->hasMany(Challenge::class);
+    }
+
     /**
      * @return array<string, mixed>
      */
