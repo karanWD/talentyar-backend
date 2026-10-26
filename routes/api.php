@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\ItemController;
 use App\Http\Controllers\Api\ActivityFieldController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ChallengeController;
 use App\Http\Controllers\Api\EvaluationController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\MediaController;
@@ -73,6 +74,10 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::delete('/follow/{user}', [FollowController::class, 'unfollow'])->name('unfollow');
 
             Route::get('/leaderboard', [UserController::class, 'leaderboard'])->name('users.leaderboard');
+            Route::get('/challenges', [ChallengeController::class, 'index'])->name('challenges.index');
+            Route::get('/challenges/{challenge}', [ChallengeController::class, 'show'])->name('challenges.show');
+            Route::post('/challenges/{challenge}/participate', [ChallengeController::class, 'participate'])
+                ->name('challenges.participate');
             Route::post('/media', [MediaController::class, 'upload'])->name('media.upload');
             Route::get('/posts', [PostController::class, 'myPosts'])->name('posts.index');
             Route::get('/{username}/posts', [PostController::class, 'userPosts'])->name('userPosts.index');

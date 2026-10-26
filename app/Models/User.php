@@ -112,6 +112,17 @@ class User extends Authenticatable
         return $this->hasMany(Evaluation::class);
     }
 
+    public function challengeParticipations(): HasMany
+    {
+        return $this->hasMany(ChallengeParticipation::class);
+    }
+
+    public function participatedChallenges(): BelongsToMany
+    {
+        return $this->belongsToMany(Challenge::class, 'challenge_participations')
+            ->withTimestamps();
+    }
+
     public function referredBy(): BelongsTo
     {
         return $this->belongsTo(self::class, 'referred_by_user_id');

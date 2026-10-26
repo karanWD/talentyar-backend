@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class ChallengeResource extends BaseResource
@@ -28,6 +29,18 @@ class ChallengeResource extends BaseResource
             'activated_at' => $this->activated_at?->toIso8601String(),
             'expires_at' => $this->expires_at?->toIso8601String(),
             'is_currently_active' => $this->isCurrentlyActive(),
+            'participants_count' => $this->when(
+                array_key_exists('participations_count', $this->resource->getAttributes()),
+                (int) ($this->participations_count ?? 0)
+            ),
+            'has_joined' => $this->when(
+                $request->user() instanceof User,
+                (bool) ($this->has_joined ?? false)
+            ),
+            'can_join' => $this->when(
+                $request->user() instanceof User,
+                (bool) ($this->can_join ?? false)
+            ),
             'training_video' => $this->relationLoaded('trainingVideo') && $this->trainingVideo
                 ? new MediaResource($this->trainingVideo)
                 : null,

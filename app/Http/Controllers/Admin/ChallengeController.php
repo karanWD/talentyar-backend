@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Requests\UploadMediaRequest;
+use App\Http\Resources\ChallengeParticipationResource;
 use App\Http\Resources\ChallengeResource;
 use App\Http\Resources\MediaResource;
 use App\Models\Admin;
@@ -44,7 +45,8 @@ class ChallengeController extends BaseApiController
         $admin = $request->user('api-admin');
         $query = $this->activityFields
             ->scopeChallenges(Challenge::query(), $admin)
-            ->with(['activityField', 'trainingVideo']);
+            ->with(['activityField', 'trainingVideo'])
+            ->withCount('participations');
 
         if (isset($filters['activity_field_id'])) {
             $query->where('activity_field_id', $filters['activity_field_id']);
@@ -177,6 +179,49 @@ class ChallengeController extends BaseApiController
         });
 
         return $this->successResponse(null, 'Challenge deleted successfully');
+    }
+
+    public function participants(Request $request, Challenge $challenge): JsonResponse
+    {
+        if ($error = $this->authorizeOrFail($request, 'read-challenges', $challenge)) {
+            return $error;
+        }
+
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $query = $challenge->participations()
+            ->with('user.media');
+
+        if (isset($filters['search'])) {
+            $search = $filters['search'];
+            $query->whereHas('user', function ($users) use ($search): void {
+                $users->where('first_name', 'like', '%'.$search.'%')
+                    ->orWhere('last_name', 'like', '%'.$search.'%')
+                    ->orWhere('username', 'like', '%'.$search.'%');
+            });
+        }
+
+        $participations = $query
+            ->latest()
+            ->paginate($filters['per_page'] ?? 15)
+            ->withQueryString();
+
+        return $this->successResponse(
+            array_merge(
+                [
+                    'challenge' => [
+                        'id' => $challenge->id,
+                        'title' => $challenge->title,
+                    ],
+                    'participants' => ChallengeParticipationResource::collection($participations)->resolve(),
+                ],
+                $this->paginationMeta($participations)
+            ),
+            'Challenge participants retrieved successfully'
+        );
     }
 
     public function uploadVideo(Request $request): JsonResponse
@@ -343,6 +388,8 @@ class ChallengeController extends BaseApiController
 
     private function loadChallenge(Challenge $challenge): Challenge
     {
-        return $challenge->fresh(['activityField', 'trainingVideo']);
+        return $challenge
+            ->fresh(['activityField', 'trainingVideo'])
+            ->loadCount('participations');
     }
 }

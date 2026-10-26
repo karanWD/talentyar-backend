@@ -6,6 +6,8 @@ use App\Traits\MediaTrait;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Challenge extends Model
@@ -56,6 +58,17 @@ class Challenge extends Model
     {
         return $this->morphOne(Media::class, 'entity')
             ->where('collection', self::TRAINING_VIDEO_COLLECTION);
+    }
+
+    public function participations(): HasMany
+    {
+        return $this->hasMany(ChallengeParticipation::class);
+    }
+
+    public function participants(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'challenge_participations')
+            ->withTimestamps();
     }
 
     public function scopeCurrentlyActive(Builder $query): Builder
