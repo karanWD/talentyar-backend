@@ -68,6 +68,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/challenges', [ChallengeController::class, 'store'])->name('challenges.store');
             Route::get('/challenges/{challenge}/participants', [ChallengeController::class, 'participants'])
                 ->name('challenges.participants.index');
+            Route::patch('/challenges/{challenge}/participants/{participation}/score', [ChallengeController::class, 'scoreParticipant'])
+                ->name('challenges.participants.score');
             Route::get('/challenges/{challenge}', [ChallengeController::class, 'show'])->name('challenges.show');
             Route::match(['put', 'patch'], '/challenges/{challenge}', [ChallengeController::class, 'update'])
                 ->name('challenges.update');

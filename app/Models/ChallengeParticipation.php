@@ -18,6 +18,9 @@ class ChallengeParticipation extends Model
     protected $fillable = [
         'challenge_id',
         'user_id',
+        'score',
+        'scored_by_admin_id',
+        'scored_at',
     ];
 
     protected function casts(): array
@@ -25,6 +28,9 @@ class ChallengeParticipation extends Model
         return [
             'challenge_id' => 'integer',
             'user_id' => 'integer',
+            'score' => 'integer',
+            'scored_by_admin_id' => 'integer',
+            'scored_at' => 'datetime',
         ];
     }
 
@@ -36,6 +42,11 @@ class ChallengeParticipation extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function scoredByAdmin(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'scored_by_admin_id');
     }
 
     public function submission(): MorphOne

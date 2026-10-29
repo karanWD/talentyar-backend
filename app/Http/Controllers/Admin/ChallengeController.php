@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\ChallengeActionType;
+use App\Enums\ChallengeType;
 use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Requests\UploadMediaRequest;
 use App\Http\Resources\ChallengeParticipationResource;
@@ -9,6 +11,7 @@ use App\Http\Resources\ChallengeResource;
 use App\Http\Resources\MediaResource;
 use App\Models\Admin;
 use App\Models\Challenge;
+use App\Models\ChallengeParticipation;
 use App\Models\Media;
 use App\Services\AdminActivityFieldService;
 use App\Services\AdminPermissionService;
@@ -37,6 +40,8 @@ class ChallengeController extends BaseApiController
         $filters = $request->validate([
             'activity_field_id' => ['nullable', 'integer', 'exists:activity_fields,id'],
             'status' => ['nullable', 'string', Rule::in(Challenge::STATUSES)],
+            'type' => ['nullable', Rule::enum(ChallengeType::class)],
+            'action_type' => ['nullable', Rule::enum(ChallengeActionType::class)],
             'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
@@ -54,6 +59,14 @@ class ChallengeController extends BaseApiController
 
         if (isset($filters['status'])) {
             $query->where('status', $filters['status']);
+        }
+
+        if (isset($filters['type'])) {
+            $query->where('type', $filters['type']);
+        }
+
+        if (isset($filters['action_type'])) {
+            $query->where('action_type', $filters['action_type']);
         }
 
         if (isset($filters['search'])) {
@@ -92,6 +105,8 @@ class ChallengeController extends BaseApiController
 
         $videoHash = Arr::pull($validated, 'training_video_hash');
         $validated['status'] ??= Challenge::STATUS_INACTIVE;
+        $validated['type'] ??= ChallengeType::Score->value;
+        $validated = $this->normalizeTypeFields($validated);
 
         $challenge = DB::transaction(function () use ($validated, $videoHash): Challenge {
             $challenge = new Challenge($validated);
@@ -141,6 +156,7 @@ class ChallengeController extends BaseApiController
 
         $hasVideoUpdate = array_key_exists('training_video_hash', $validated);
         $videoHash = Arr::pull($validated, 'training_video_hash');
+        $validated = $this->normalizeTypeFields($validated, $challenge);
 
         DB::transaction(function () use ($challenge, $validated, $hasVideoUpdate, $videoHash): void {
             $wasExpired = $challenge->status === Challenge::STATUS_ACTIVE
@@ -215,12 +231,51 @@ class ChallengeController extends BaseApiController
                     'challenge' => [
                         'id' => $challenge->id,
                         'title' => $challenge->title,
+                        'type' => $challenge->type->value,
+                        'action_type' => $challenge->action_type?->value,
+                        'action_target_count' => $challenge->action_target_count,
                     ],
                     'participants' => ChallengeParticipationResource::collection($participations)->resolve(),
                 ],
                 $this->paginationMeta($participations)
             ),
             'Challenge participants retrieved successfully'
+        );
+    }
+
+    public function scoreParticipant(
+        Request $request,
+        Challenge $challenge,
+        ChallengeParticipation $participation
+    ): JsonResponse {
+        if ($error = $this->authorizeOrFail($request, 'update-challenges', $challenge)) {
+            return $error;
+        }
+
+        if ($participation->challenge_id !== $challenge->id) {
+            return $this->errorResponse('Challenge participation not found', 404);
+        }
+
+        if (! $challenge->isScoreType()) {
+            return $this->errorResponse('Only score challenges can be scored', 422);
+        }
+
+        $validated = $request->validate([
+            'score' => ['required', 'integer', 'min:0', 'max:100'],
+        ]);
+
+        /** @var Admin $admin */
+        $admin = $request->user('api-admin');
+        $participation->update([
+            'score' => $validated['score'],
+            'scored_by_admin_id' => $admin->id,
+            'scored_at' => now(),
+        ]);
+        $participation->load(['user.media', 'submission']);
+
+        return $this->successResponse(
+            ['participation' => new ChallengeParticipationResource($participation)],
+            'Challenge participant scored successfully'
         );
     }
 
@@ -306,6 +361,12 @@ class ChallengeController extends BaseApiController
     private function rules(bool $creating, ?Challenge $challenge = null): array
     {
         $required = $creating ? 'required' : 'sometimes';
+        $effectiveType = request()->input('type')
+            ?: $challenge?->type?->value
+            ?: ChallengeType::Score->value;
+        $actionFieldsRequired = $effectiveType === ChallengeType::Action->value
+            && ($creating || $challenge?->type !== ChallengeType::Action);
+        $actionFieldPresence = $actionFieldsRequired ? 'required' : 'sometimes';
 
         return [
             'activity_field_id' => [$required, 'integer', 'exists:activity_fields,id'],
@@ -315,6 +376,28 @@ class ChallengeController extends BaseApiController
             'conditions' => [$required, 'string'],
             'rules' => [$required, 'string'],
             'prize' => [$required, 'string', 'max:255'],
+            'type' => [
+                $creating ? 'nullable' : 'sometimes',
+                Rule::enum(ChallengeType::class),
+                function (string $attribute, mixed $value, Closure $fail) use ($challenge): void {
+                    if ($challenge
+                        && $value !== $challenge->type->value
+                        && $challenge->participations()->exists()) {
+                        $fail('The challenge type cannot be changed after users have participated.');
+                    }
+                },
+            ],
+            'action_type' => [
+                Rule::prohibitedIf($effectiveType !== ChallengeType::Action->value),
+                $actionFieldPresence,
+                Rule::enum(ChallengeActionType::class),
+            ],
+            'action_target_count' => [
+                Rule::prohibitedIf($effectiveType !== ChallengeType::Action->value),
+                $actionFieldPresence,
+                'integer',
+                'min:1',
+            ],
             'status' => [$creating ? 'nullable' : 'sometimes', 'string', Rule::in(Challenge::STATUSES)],
             'active_duration_days' => [$required, 'integer', 'min:1', 'max:3650'],
             'training_video_hash' => [
@@ -341,6 +424,22 @@ class ChallengeController extends BaseApiController
                 },
             ],
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function normalizeTypeFields(array $validated, ?Challenge $challenge = null): array
+    {
+        $type = $validated['type'] ?? $challenge?->type?->value ?? ChallengeType::Score->value;
+
+        if ($type === ChallengeType::Score->value) {
+            $validated['action_type'] = null;
+            $validated['action_target_count'] = null;
+        }
+
+        return $validated;
     }
 
     private function syncTrainingVideo(Challenge $challenge, ?string $hash): void

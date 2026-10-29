@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\ChallengeActionType;
+use App\Enums\ChallengeType;
 use App\Traits\MediaTrait;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +27,10 @@ class Challenge extends Model
 
     public const TRAINING_VIDEO_COLLECTION = 'training_video';
 
+    protected $attributes = [
+        'type' => ChallengeType::Score->value,
+    ];
+
     protected $fillable = [
         'activity_field_id',
         'title',
@@ -33,6 +39,9 @@ class Challenge extends Model
         'conditions',
         'rules',
         'prize',
+        'type',
+        'action_type',
+        'action_target_count',
         'status',
         'active_duration_days',
         'activated_at',
@@ -43,6 +52,9 @@ class Challenge extends Model
     {
         return [
             'activity_field_id' => 'integer',
+            'type' => ChallengeType::class,
+            'action_type' => ChallengeActionType::class,
+            'action_target_count' => 'integer',
             'active_duration_days' => 'integer',
             'activated_at' => 'datetime',
             'expires_at' => 'datetime',
@@ -87,6 +99,16 @@ class Challenge extends Model
             && $this->activated_at->lte(now())
             && $this->expires_at !== null
             && $this->expires_at->gt(now());
+    }
+
+    public function isScoreType(): bool
+    {
+        return $this->type === ChallengeType::Score;
+    }
+
+    public function isActionType(): bool
+    {
+        return $this->type === ChallengeType::Action;
     }
 
     /**

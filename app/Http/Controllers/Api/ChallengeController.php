@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\ChallengeActionType;
+use App\Enums\ChallengeType;
 use App\Http\Requests\UploadChallengeMediaRequest;
 use App\Http\Resources\ChallengeParticipationResource;
 use App\Http\Resources\ChallengeResource;
@@ -16,6 +18,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class ChallengeController extends BaseApiController
@@ -28,6 +31,8 @@ class ChallengeController extends BaseApiController
     {
         $filters = $request->validate([
             'activity_field_id' => ['nullable', 'integer', 'exists:activity_fields,id'],
+            'type' => ['nullable', Rule::enum(ChallengeType::class)],
+            'action_type' => ['nullable', Rule::enum(ChallengeActionType::class)],
             'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
@@ -45,6 +50,14 @@ class ChallengeController extends BaseApiController
 
         if (isset($filters['activity_field_id'])) {
             $query->where('activity_field_id', $filters['activity_field_id']);
+        }
+
+        if (isset($filters['type'])) {
+            $query->where('type', $filters['type']);
+        }
+
+        if (isset($filters['action_type'])) {
+            $query->where('action_type', $filters['action_type']);
         }
 
         if (isset($filters['search'])) {
@@ -144,47 +157,58 @@ class ChallengeController extends BaseApiController
             return $this->errorResponse('User has already participated in this challenge', 409);
         }
 
-        $validated = $request->validate([
-            'media_hash' => [
-                'bail',
-                'required',
-                'string',
-                'size:64',
-                function (string $attribute, mixed $value, Closure $fail) use ($user): void {
-                    $media = $this->findAvailableParticipationMedia($value, $user->id);
+        $validated = $challenge->isScoreType()
+            ? $request->validate([
+                'media_hash' => [
+                    'bail',
+                    'required',
+                    'string',
+                    'size:64',
+                    function (string $attribute, mixed $value, Closure $fail) use ($user): void {
+                        $media = $this->findAvailableParticipationMedia($value, $user->id);
 
-                    if (! $media) {
-                        $fail('The selected challenge media was not found or is already in use.');
+                        if (! $media) {
+                            $fail('The selected challenge media was not found or is already in use.');
 
-                        return;
-                    }
+                            return;
+                        }
 
-                    if (! str_starts_with($media->mime_type ?? '', 'image/')
-                        && ! str_starts_with($media->mime_type ?? '', 'video/')) {
-                        $fail('The selected media must be an image or video.');
-                    }
-                },
-            ],
-        ]);
+                        if (! str_starts_with($media->mime_type ?? '', 'image/')
+                            && ! str_starts_with($media->mime_type ?? '', 'video/')) {
+                            $fail('The selected media must be an image or video.');
+                        }
+                    },
+                ],
+            ])
+            : $request->validate([
+                'media_hash' => ['prohibited'],
+            ]);
 
         try {
             $participation = DB::transaction(function () use ($challenge, $user, $validated): ChallengeParticipation {
-                $media = $this->findAvailableParticipationMedia(
-                    $validated['media_hash'],
-                    $user->id,
-                    lockForUpdate: true
-                );
+                $media = null;
 
-                if (! $media) {
-                    throw ValidationException::withMessages([
-                        'media_hash' => ['The selected challenge media is no longer available.'],
-                    ]);
+                if ($challenge->isScoreType()) {
+                    $media = $this->findAvailableParticipationMedia(
+                        $validated['media_hash'],
+                        $user->id,
+                        lockForUpdate: true
+                    );
+
+                    if (! $media) {
+                        throw ValidationException::withMessages([
+                            'media_hash' => ['The selected challenge media is no longer available.'],
+                        ]);
+                    }
                 }
 
                 $participation = $challenge->participations()->create([
                     'user_id' => $user->id,
                 ]);
-                $participation->assignMedia($media, ChallengeParticipation::MEDIA_COLLECTION);
+
+                if ($media) {
+                    $participation->assignMedia($media, ChallengeParticipation::MEDIA_COLLECTION);
+                }
 
                 return $participation;
             });

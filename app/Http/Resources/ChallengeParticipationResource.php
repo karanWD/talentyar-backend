@@ -30,6 +30,9 @@ class ChallengeParticipationResource extends BaseResource
             'challenge_id' => $this->challenge_id,
             'user_id' => $this->user_id,
             'participated_at' => $this->created_at?->toIso8601String(),
+            'score' => $this->score,
+            'scored_at' => $this->scored_at?->toIso8601String(),
+            'scored_by_admin_id' => $this->when($admin instanceof Admin, $this->scored_by_admin_id),
             'media' => $submission ? new MediaResource($submission) : null,
             'user' => $user ? [
                 'id' => $user->id,
