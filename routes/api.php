@@ -75,6 +75,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
             Route::get('/leaderboard', [UserController::class, 'leaderboard'])->name('users.leaderboard');
             Route::get('/challenges', [ChallengeController::class, 'index'])->name('challenges.index');
+            Route::post('/challenges/media', [ChallengeController::class, 'uploadParticipationMedia'])
+                ->name('challenges.media.store');
             Route::get('/challenges/{challenge}', [ChallengeController::class, 'show'])->name('challenges.show');
             Route::post('/challenges/{challenge}/participate', [ChallengeController::class, 'participate'])
                 ->name('challenges.participate');

@@ -23,12 +23,14 @@ class ChallengeParticipationResource extends BaseResource
         $avatar = $user?->relationLoaded('media')
             ? ($user->media->where('collection', 'avatar')->first() ?? $user->media->first())
             : null;
+        $submission = $this->relationLoaded('submission') ? $this->submission : null;
 
         return [
             'id' => $this->id,
             'challenge_id' => $this->challenge_id,
             'user_id' => $this->user_id,
             'participated_at' => $this->created_at?->toIso8601String(),
+            'media' => $submission ? new MediaResource($submission) : null,
             'user' => $user ? [
                 'id' => $user->id,
                 'first_name' => $user->first_name,

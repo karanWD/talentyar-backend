@@ -193,7 +193,7 @@ class ChallengeController extends BaseApiController
         ]);
 
         $query = $challenge->participations()
-            ->with('user.media');
+            ->with(['user.media', 'submission']);
 
         if (isset($filters['search'])) {
             $search = $filters['search'];
