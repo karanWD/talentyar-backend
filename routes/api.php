@@ -85,6 +85,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('/explore', [PostController::class, 'explore'])->name('feed');
 
             Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
+            Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
 
             Route::post('/posts/{post}/like', [PostController::class, 'like'])->name('posts.like');
             Route::post('/posts/{post}/dislike', [PostController::class, 'dislike'])->name('posts.dislike');

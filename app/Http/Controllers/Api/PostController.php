@@ -15,6 +15,9 @@ use App\Notifications\InternalNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class PostController extends BaseApiController
 {
@@ -145,7 +148,6 @@ class PostController extends BaseApiController
                 ->get()
                 ->keyBy('hash');
 
-
             if ($request->filled('thumbnail_hash')) {
                 $thumbnailMedia = Media::where('hash', $request->validated('thumbnail_hash'))->firstOrFail();
                 $post->assignMedia($thumbnailMedia, 'thumbnail');
@@ -163,6 +165,46 @@ class PostController extends BaseApiController
             ['post' => new PostResource($post)],
             'Post created successfully',
             201
+        );
+    }
+
+    /**
+     * Delete one of the current user's posts and all of its attached files.
+     */
+    public function destroy(Request $request, Post $post): JsonResponse
+    {
+        if ($post->user_id !== $request->user()->id) {
+            return $this->errorResponse('Forbidden', 403);
+        }
+
+        $post->load('media');
+
+        DB::transaction(function () use ($post): void {
+            /** @var Media $media */
+            foreach ($post->media as $media) {
+                $isUsedElsewhere = Media::query()
+                    ->whereKeyNot($media->getKey())
+                    ->where('disk', $media->disk)
+                    ->where('path', $media->path)
+                    ->exists();
+
+                if (! $isUsedElsewhere) {
+                    $disk = $media->disk ?: 's3';
+
+                    if (! Storage::disk($disk)->delete($media->path)) {
+                        throw new RuntimeException("Unable to delete post media from disk [{$disk}].");
+                    }
+                }
+
+                $media->forceDelete();
+            }
+
+            $post->delete();
+        });
+
+        return $this->successResponse(
+            null,
+            'Post deleted successfully'
         );
     }
 
